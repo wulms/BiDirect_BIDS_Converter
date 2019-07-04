@@ -21,6 +21,7 @@ library(stringr)
 library(tidyr)
 library(devtools)
 library(dcm2niir)
+library(stringi)
 ```
 
 ```{r eval=FALSE}
@@ -54,27 +55,24 @@ dir.create("codebooks")
 #### creation of codebooks
 
 ```{r}
-timepoints <- list(old = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_plus"), 
-                         new = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_plus"))
+timepoints <- list(new = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_plus"),
+                   old = c("Baseline", "FollowUp1", "FollowUp2", "FollowUp3"))
 
-sequence <- list(old = c("anat/T1w", "anat/T2w", "anat/T2star", "anat/FLAIR",
-                               "func/rest", "func/epi_bold",
-                               "dwi/DTI",
-                               "other/T2ffe"),
-                       new = c("anat/T1w", "anat/T2w", "anat/T2star", "anat/FLAIR",
-                               "func/rest", "func/epi_bold",
-                               "dwi/DTI",
-                               "other/T2ffe"))
 string_replace <- list(old = c("unwanted_prefix"),
                              new = c("replacement"))
 
-codebooks <- list(timepoints, sequence, string_replace)
-codebook_names <- c("timepoints", "sequence", "string_replace")
+
 ```
 
 #### writing codebooks as csv
 
-```{r}
+take care, if you activate this your already made tables can be overwritten!
+
+```{r eval=FALSE}
+
+codebooks <- list(timepoints, sequence, string_replace)
+codebook_names <- c("timepoints", "sequence", "string_replace")
+
 a <- 1
  for (i in codebooks) {
     print(codebook_names[a])
@@ -149,12 +147,74 @@ for (i in 1:length(dicoms)) {
 
 # Step 3: BIDS formatting and moving
 
+## Indexing of files (json and nii.gz)
+
 ```{r}
 nii_temp_path <- list.files("nii_temp", 
                      recursive = TRUE,
                      full.names = TRUE)
+
 ```
 
+## Read in codebooks
+
+```{r}
+timepoints_new <- read.csv("codebooks/timepoints.csv")
+
+old <- as.character(timepoints_new$old)
+new <- as.character(timepoints_new$new)
+
+nii_timepoints <- stri_replace_all_fixed(nii_temp_path, old, new, vectorize_all = FALSE)
+
+```
+
+## Convert to splitted file
+
+```{r}
+nii_timepoints <- str_split(nii_temp_path, pattern = "/", simplify = TRUE)
+
+```
+
+#### Extraction of file patterns
+
+```{r}
+
+subjects <- unique(nii_timepoints[,3])
+subjects
+
+sequence$old <- data.frame(nii_timepoints[,4] %>% str_replace(".json|.nii.gz", ""), 
+                           stringsAsFactors = FALSE) %>% unique()
+sequence$old
+
+sequence_types <- c("anat/T1w", "anat/T2w", "anat/T2star", "anat/FLAIR",
+                               "func/rest", "func/epi_bold",
+                               "dwi/DTI",
+                               "other/T2ffe")
+
+sequence$clean <- sequence$old %>%
+  str_replace_all("36Jones20|TFElrsQFOV|fMRsshp|Patient_Aligned_MPR_AWPLAN_|_-_WIP_|_TYPE_BRAIN_|MST_|_Blut", "")
+```
+
+#### Writing out codebook files
+
+```{r eval=FALSE}
+codebooks <- list(timepoints, sequence, string_replace)
+codebook_names <- c("timepoints", "sequence", "string_replace")
+
+
+a <- 1
+ for (i in codebooks) {
+    print(codebook_names[a])
+   print(paste0("codebooks/", codebook_names[a], ".csv"))
+    print(i)
+    write.table(i, paste0("codebooks/", codebook_names[a], ".csv"), 
+            row.names = FALSE,
+            quote = FALSE,
+            sep = ";")
+    a <- a + 1
+   }
+
+```
 
 
 

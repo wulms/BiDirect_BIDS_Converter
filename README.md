@@ -22,8 +22,10 @@ Later on this tool is planned to be useable for longitudinal studies with multip
 
 Baseline -> ses1  
 FollowUp1 -> ses2  
-FollowUp2 -> ses3  
-FollowUp3 -> ses4  
+FollowUp2 -> ses3
+FollowUp2_Plus -> ses3_plus
+FollowUp3 -> ses4
+FollowUp3_Plus -> ses4_plus
 
 #### standard nomenclature 
 
