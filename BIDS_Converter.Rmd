@@ -1,0 +1,163 @@
+---
+title: "BD_BIDS_Converter"
+author: "Niklas Wulms"
+date: "7/4/2019"
+output: html_document
+---
+
+#### optional: libraries to install
+
+```{r eval=FALSE}
+install.packages("stringr")
+install.packages("tidyverse")
+install.packages("devtools")
+devtools::install_github("muschellij2/dcm2niir")
+```
+
+#### load libraries
+
+```{r}
+library(stringr)
+library(tidyr)
+library(devtools)
+library(dcm2niir)
+```
+
+```{r eval=FALSE}
+install_dcm2nii(lib.loc=NULL, overwrite = FALSE, from_source = TRUE, jpeg = FALSE, progdir = NULL)
+```
+
+
+# set here your start folder
+
+```{r}
+start_dir <- ("/media/niklas/spaceC/BIDS_Convert_test") 
+setwd(start_dir)
+```
+
+```{r setup}
+
+knitr::opts_knit$set(root.dir = start_dir)
+
+```
+
+
+#### creation of output folders
+
+```{r}
+dicom_dir <- paste0(file.path("dicom"))
+dir.create("nii_temp")
+dir.create("nii")
+dir.create("codebooks")
+```
+
+#### creation of codebooks
+
+```{r}
+timepoints <- list(old = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_plus"), 
+                         new = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_plus"))
+
+sequence <- list(old = c("anat/T1w", "anat/T2w", "anat/T2star", "anat/FLAIR",
+                               "func/rest", "func/epi_bold",
+                               "dwi/DTI",
+                               "other/T2ffe"),
+                       new = c("anat/T1w", "anat/T2w", "anat/T2star", "anat/FLAIR",
+                               "func/rest", "func/epi_bold",
+                               "dwi/DTI",
+                               "other/T2ffe"))
+string_replace <- list(old = c("unwanted_prefix"),
+                             new = c("replacement"))
+
+codebooks <- list(timepoints, sequence, string_replace)
+codebook_names <- c("timepoints", "sequence", "string_replace")
+```
+
+#### writing codebooks as csv
+
+```{r}
+a <- 1
+ for (i in codebooks) {
+    print(codebook_names[a])
+   print(paste0("codebooks/", codebook_names[a], ".csv"))
+    print(i)
+    write.table(i, paste0("codebooks/", codebook_names[a], ".csv"), 
+            row.names = FALSE,
+            quote = FALSE,
+            sep = ";")
+    a <- a + 1
+   }
+
+```
+
+#### Fill in your information into the _codebooks_.
+
+Use LibreOffice, Excel, or some other editor. Then it is time to read it in.
+
+#### Indexing of dicom images
+
+compare which folders are done and which are not done.
+
+```{r}
+dicoms <- dir(dicom_dir, full.names = TRUE)
+
+timepoint_path <- list.dirs("dicom", 
+    recursive = FALSE, 
+    full.names = TRUE)
+
+dicoms <- unlist(lapply(timepoint_path, FUN = dir, 
+                 recursive = FALSE, 
+                 full.names = TRUE))
+
+dicoms_done <- unlist(lapply(timepoint_path, FUN = dir, 
+                 pattern = "_done", 
+                 recursive = FALSE, 
+                 full.names = TRUE))
+
+dicoms <- setdiff(dicoms, dicoms_done)
+```
+
+# Main step 2: Nii conversion
+
+here a loop reads in the dicoms (that dont have the suffix "_done") and converts them. Then changes the folder name to "_done".
+
+#### flags
+
+-ba y or n - turns on BIDS and anonymization
+-o "path" - gives the output path
+-z - turns on conversion
+-f - filename information
+
+```{r}
+
+output_path <- str_replace(dicoms, "dicom", "nii_temp") %>%
+  str_replace(regex(",bidirect", ignore_case = TRUE), "")
+
+lapply(output_path, dir.create, recursive=TRUE)
+
+for (i in 1:length(dicoms)) {
+  print(dicoms[i])
+  dcm2nii(dicoms[i], 
+          copy_files = FALSE,
+          opts = paste0("-ba y ", "-o ", output_path[i], " -z y", " -f %d"))
+  
+  file.rename(dicoms[i], paste0(dicoms[i],"_done"))
+}
+
+```
+
+## Now that your files are converted and anonymized we take care of getting the data into the BIDS format and move them from the nii_temp folder to the nii folder.
+
+# Step 3: BIDS formatting and moving
+
+```{r}
+nii_temp_path <- list.files("nii_temp", 
+                     recursive = TRUE,
+                     full.names = TRUE)
+```
+
+
+
+
+
+
+
