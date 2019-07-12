@@ -26,6 +26,7 @@ library(tidyr)
 library(devtools)
 library(dcm2niir)
 library(stringi)
+library(dplyr)
 ```
 
 
@@ -64,16 +65,23 @@ dicoms <- dir("dicom", full.names = TRUE)
 dicoms <- unlist(lapply(dicoms, FUN = dir, 
                  recursive = FALSE, 
                  full.names = TRUE)) 
-# %>% str_split("/")
 ```
 
 
-```{r}
-# converted dicoms rausfiltern '_done'  auslesen!
-dicoms_done <- dicoms %>%
-  str_subset(pattern = "_done")
 
-dicoms_to_process <- setdiff(dicoms, dicoms_done)
+```{r}
+# converted dicoms rausfiltern auslesen!
+if (file.exists("dcm_converted.txt") == 1) {
+  print("Reading in already converted dicom files")
+  dicoms_done <- read.table("dcm_converted.txt", stringsAsFactors = FALSE)
+  dicoms_to_process <- setdiff(dicoms, dicoms_done$V1)
+
+} else {
+   dicoms_done <- 0
+   dicoms_to_process <- setdiff(dicoms, dicoms_done)
+
+}
+
 ```
 
 
@@ -95,7 +103,7 @@ Anonymized nii images will be outputted
 
 # Creation of pathnames for temporary output
 nii_temp_path <- str_replace(dicoms_to_process, "dicom", "nii_temp") %>%
-  str_replace(regex(",bidirect", ignore_case = TRUE), "")
+  str_replace(regex(",bidirect|_bidirect", ignore_case = TRUE), "")
 
 # Creation of folders
 lapply(nii_temp_path, dir.create, recursive=TRUE)
@@ -107,9 +115,10 @@ for (i in 1:length(dicoms_to_process)) {
           copy_files = FALSE,
           opts = paste0("-ba y ", "-o ", nii_temp_path[i], " -z y", " -f %d"))
   
-  # add '_done' label to dicoms!
-  file.rename(dicoms_to_process[i], paste0(dicoms_to_process[i],"_done"))
 }
+
+
+write.table(dicoms_to_process, "dcm_converted.txt", row.names = FALSE, col.names = FALSE)
 
 ```
 
