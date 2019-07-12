@@ -33,14 +33,14 @@ library(stringi)
 # set here your start folder
 
 ```{r}
-start_dir <- ("/media/niklas/spaceC/BIDS_Convert_test") 
+working_dir <- ("/media/niklas/spaceC/BIDS_Convert_test") 
 ```
 
 Working directory is set here
 
 ```{r setup}
 require(knitr)
-knitr::opts_knit$set(root.dir = start_dir)
+knitr::opts_knit$set(root.dir = working_dir)
 
 ```
 
@@ -173,7 +173,7 @@ unique(sequences_used[,4]) %>%
   sort()
 ```
 
-## Application to the files
+## Generating new BIDS file paths
 
 ```{r}
 sequence_BIDS <- nii_temp_path %>%
@@ -186,12 +186,30 @@ sequence_BIDS <- nii_temp_path %>%
   str_split_fixed("/", n = 4)
   
 sequence_BIDS <- paste(sequence_BIDS[,1], sequence_BIDS[,3], sequence_BIDS[,2], sequence_BIDS[,4], sep = "/")
+```
 
+## QC: converted_files.csv creation!
+
+```{r}
 # Comparison of original path and renamed version  
-mapping_list <- cbind(nii_temp_path, sequence_BIDS) 
+mapping_list <- cbind(nii_temp_path, sequence_BIDS)
+
+
+if (file.exists("converted_files.csv") == 0) {
+  print("Mapping does not exist - writing file")
+  write.csv(mapping_list, "converted_files.csv", row.names = FALSE)
+  
+} else {
+  print("Other mapping was found 'converted_files.csv'. File opened, additional information added.")
+  read.csv("converted_files.csv", stringsAsFactors = FALSE) %>% 
+    rbind(mapping_list) %>%
+    write.csv("converted_files.csv", row.names = FALSE)
+  
+}
 
 head(mapping_list)
 ```
+
 
 
 # Step 3: copying of files and renaming
@@ -208,9 +226,10 @@ for (i in 1:length(BIDS_folders)){
   dir.create(BIDS_folders[i], recursive = TRUE)
 }
 
-
+# Reorder the files to the new folders
 file.rename(mapping_list[,1], mapping_list[,2])
 
+# Delete 'nii_temp' folder
 unlink("nii_temp", recursive = TRUE)
 ```
 
