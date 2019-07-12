@@ -14,6 +14,10 @@ install.packages("devtools")
 devtools::install_github("muschellij2/dcm2niir")
 ```
 
+```{r eval=FALSE}
+install_dcm2nii(lib.loc=NULL, overwrite = FALSE, from_source = TRUE, jpeg = FALSE, progdir = NULL)
+```
+
 #### load libraries
 
 ```{r}
@@ -24,9 +28,6 @@ library(dcm2niir)
 library(stringi)
 ```
 
-```{r eval=FALSE}
-install_dcm2nii(lib.loc=NULL, overwrite = FALSE, from_source = TRUE, jpeg = FALSE, progdir = NULL)
-```
 
 
 # set here your start folder
@@ -38,7 +39,7 @@ start_dir <- ("/media/niklas/spaceC/BIDS_Convert_test")
 Working directory is set here
 
 ```{r setup}
-
+require(knitr)
 knitr::opts_knit$set(root.dir = start_dir)
 
 ```
@@ -47,73 +48,35 @@ knitr::opts_knit$set(root.dir = start_dir)
 #### creation of output folders
 
 ```{r}
-dicom_dir <- paste0(file.path("dicom"))
-
 dir.create("nii_temp")
 dir.create("nii")
-dir.create("codebooks")
 ```
-
-#### creation of codebooks
-
-```{r}
-
-
-string_replace <- list(old = c("unwanted_prefix"),
-                             new = c("replacement"))
-
-
-```
-
-#### writing codebooks as csv (not needed?)
-
-take care, if you activate this your already made tables can be overwritten!
-
-```{r eval=FALSE}
-
-codebooks <- list(timepoints, sequence, string_replace)
-codebook_names <- c("timepoints", "sequence", "string_replace")
-
-a <- 1
- for (i in codebooks) {
-    print(codebook_names[a])
-   print(paste0("codebooks/", codebook_names[a], ".csv"))
-    print(i)
-    write.table(i, paste0("codebooks/", codebook_names[a], ".csv"), 
-            row.names = FALSE,
-            quote = FALSE,
-            sep = ";")
-    a <- a + 1
-   }
-
-```
-
-#### Fill in your information into the _codebooks_.
-
-Use LibreOffice, Excel, or some other editor. Then it is time to read it in.
 
 #### Indexing of dicom images
 
 compare which folders are done and which are not done.
 
+We need to identify combinations of _timepoint x subject_id_ out of the folder _dicom_ and _nii_
+
 ```{r}
-dicoms <- dir(dicom_dir, full.names = TRUE)
+dicoms <- dir("dicom", full.names = TRUE)
 
-timepoint_path <- list.dirs("dicom", 
-    recursive = FALSE, 
-    full.names = TRUE)
-
-dicoms <- unlist(lapply(timepoint_path, FUN = dir, 
+dicoms <- unlist(lapply(dicoms, FUN = dir, 
                  recursive = FALSE, 
-                 full.names = TRUE))
-
-dicoms_done <- unlist(lapply(timepoint_path, FUN = dir, 
-                 pattern = "_done", 
-                 recursive = FALSE, 
-                 full.names = TRUE))
-
-dicoms <- setdiff(dicoms, dicoms_done)
+                 full.names = TRUE)) 
+# %>% str_split("/")
 ```
+
+
+```{r}
+# converted dicoms rausfiltern '_done'  auslesen!
+dicoms_done <- dicoms %>%
+  str_subset(pattern = "_done")
+
+dicoms_to_process <- setdiff(dicoms, dicoms_done)
+```
+
+
 
 # Main step 2: Nii conversion
 
@@ -130,18 +93,22 @@ Anonymized nii images will be outputted
 
 ```{r}
 
-output_path <- str_replace(dicoms, "dicom", "nii_temp") %>%
+# Creation of pathnames for temporary output
+nii_temp_path <- str_replace(dicoms_to_process, "dicom", "nii_temp") %>%
   str_replace(regex(",bidirect", ignore_case = TRUE), "")
 
-lapply(output_path, dir.create, recursive=TRUE)
+# Creation of folders
+lapply(nii_temp_path, dir.create, recursive=TRUE)
 
-for (i in 1:length(dicoms)) {
-  print(dicoms[i])
-  dcm2nii(dicoms[i], 
+# Conversion of Dicom 2 Nifti
+for (i in 1:length(dicoms_to_process)) {
+  print(dicoms_to_process[i])
+  dcm2nii(dicoms_to_process[i], 
           copy_files = FALSE,
-          opts = paste0("-ba y ", "-o ", output_path[i], " -z y", " -f %d"))
+          opts = paste0("-ba y ", "-o ", nii_temp_path[i], " -z y", " -f %d"))
   
-  file.rename(dicoms[i], paste0(dicoms[i],"_done"))
+  # add '_done' label to dicoms!
+  file.rename(dicoms_to_process[i], paste0(dicoms_to_process[i],"_done"))
 }
 
 ```
@@ -157,35 +124,13 @@ nii_temp_path <- list.files("nii_temp",
                      recursive = TRUE,
                      full.names = TRUE)
 
-
-
 ```
-
-## Filtering out the processed subjects
-
-```{r}
-processed_subjects <- nii_temp_path %>%
-  str_extract("[:digit:]{5}") %>%
-  unique()
-```
-
-
-## Converting timepoints
-
-```{r}
-old <- as.character(timepoints$old)
-new <- as.character(timepoints$new)
-
-nii_timepoints <- stri_replace_all_fixed(nii_temp_path, old, new, vectorize_all = FALSE)
-
-```
-
 
 
 #### Extraction of sequence patterns
 
 ```{r}
-
+# This is quality control of how your sequences are named (after removing of additional tags)
 str_to_remove = "36Jones20|TFElrsQFOV|fMRsshp|Patient_Aligned_MPR_AWPLAN_|_-_WIP_|_TYPE_BRAIN_|MST_|_Blut"
 
 
@@ -194,25 +139,17 @@ sequences_used <-nii_temp_path %>%
   str_replace_all(str_to_remove, "") %>%
   str_split_fixed("/", n = 4)
   
-unique(sequences_used[,4])
+unique(sequences_used[,4]) %>% sort()
 ```
 
 # Here you need to manually fit the timepoint and sequence names to your study
 
-__EDITING NEEDED_
+__EDITING NEEDED__ based on your file structure
 
 ```{r}
 
-
-
-timepoints <- list(new = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_plus"),
-                   old = c("Baseline", "FollowUp1", "FollowUp2", "FollowUp2_plus", "FollowUp3", "FollowUp3_plus"))
-
-old <- as.character(timepoints$old)
-new <- as.character(timepoints$new)
-
 sequence_types <- c("anat/T1w", "anat/T1w_TFEmod", "anat/T2w", "anat/T2mod", "anat/T2star", "anat/FLAIR", "anat/FLAIR_VISTA",
-                               "func/rest", "func/epi_bold",
+                               "func/rest_133", "func/epi_bold",
                                "dwi/isoRegDTI", "dwi/faRegDTI" , "dwi/dRegDTI", "dwi/facRegDTI", "dwi/RegDTI", "dwi/DTI",
                                "other/smartplan", "other/survey", "other/smartbrain")
 
@@ -221,31 +158,37 @@ sequence_to_rename <- c("3DT1", "T1W_TFE", "T2W_TSE", "T2mod", "T2_FFE", "FLAIR_
                         "isoRegDTI", "faRegDTI" , "dRegDTI", "facRegDTI", regex("^RegDTI"), "^DTI",
                         "SMARTPLAN", "survey", "SmartBrain")
 
+timepoints <- list(new = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_plus"),
+                   old = c("Baseline", "FollowUp1", "FollowUp2", "FollowUp2_plus", "FollowUp3", "FollowUp3_plus"))
 
+```
 
+```{r}
+# Output of unique sequence names
 unique(sequences_used[,4]) %>%
   str_replace_all(str_to_remove, "") %>%
   stri_replace_all_fixed(regex(sequence_to_rename), sequence_types, vectorize_all = FALSE) %>%
   str_replace_all("^RegDTI", "dwi/RegDTI") %>%
   str_replace_all("^DTI", "dwi/DTI") %>%
   sort()
-
-
 ```
 
 ## Application to the files
 
 ```{r}
-sequence_BIDS <- nii_timepoints %>%
+sequence_BIDS <- nii_temp_path %>%
+  stri_replace_all_fixed(timepoints$old, timepoints$new, vectorize_all = FALSE) %>%
   str_replace_all(str_to_remove, "") %>%
   stri_replace_all_fixed(sequence_to_rename, sequence_types, vectorize_all = FALSE) %>%
   str_replace_all("(?<=/)RegDTI", "dwi/RegDTI") %>%
   str_replace_all("(?<=/)DTI", "dwi/DTI") %>%
-  str_replace_all("nii_temp", "nii")
+  str_replace_all("nii_temp", "nii") %>%
+  str_split_fixed("/", n = 4)
+  
+sequence_BIDS <- paste(sequence_BIDS[,1], sequence_BIDS[,3], sequence_BIDS[,2], sequence_BIDS[,4], sep = "/")
 
-mapping_list <- cbind(nii_temp_path, sequence_BIDS)
-
-mapping_list <- as.data.frame(mapping_list)
+# Comparison of original path and renamed version  
+mapping_list <- cbind(nii_temp_path, sequence_BIDS) 
 
 head(mapping_list)
 ```
@@ -255,24 +198,20 @@ head(mapping_list)
 
 ```{r}
 
-
-
-new_folders <- str_remove(mapping[,2], "(?<=/)[^/]*$") %>% unique()
-
-converted = list()
+# Regex for identifying folders to create
+BIDS_folders <- gsub("(.*)/.*","\\1", sequence_BIDS) %>% unique()
 
 i = 0
 
-for (i in 1:length(new_folders)){
+for (i in 1:length(BIDS_folders)){
   print(i)
-#  dir.create(new_folders[i], recursive = TRUE)
- converted[i] = paste(new_folders[i], "converted_renamed")
+  dir.create(BIDS_folders[i], recursive = TRUE)
 }
 
 
-file.rename(mapping[,1], mapping[,2])
+file.rename(mapping_list[,1], mapping_list[,2])
 
-write.csv(mapping, "file_name_mapping.csv")
+unlink("nii_temp", recursive = TRUE)
 ```
 
 
