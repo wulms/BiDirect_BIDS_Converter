@@ -34,7 +34,7 @@ library(dplyr)
 # set here your start folder
 
 ```{r}
-working_dir <- ("/media/niklas/spaceC/BIDS_Convert_test") 
+working_dir <- ("/media/niklas/spaceC/Sicherung_BiDirect_Dicoms") 
 ```
 
 Working directory is set here
@@ -46,13 +46,6 @@ knitr::opts_knit$set(root.dir = working_dir)
 ```
 
 
-#### creation of output folders
-
-```{r}
-dir.create("nii_temp")
-dir.create("nii")
-```
-
 #### Indexing of dicom images
 
 compare which folders are done and which are not done.
@@ -60,6 +53,9 @@ compare which folders are done and which are not done.
 We need to identify combinations of _timepoint x subject_id_ out of the folder _dicom_ and _nii_
 
 ```{r}
+
+rm(list=ls())
+
 dicoms <- dir("dicom", full.names = TRUE)
 
 dicoms <- unlist(lapply(dicoms, FUN = dir, 
@@ -75,15 +71,42 @@ if (file.exists("dcm_converted.txt") == 1) {
   print("Reading in already converted dicom files")
   dicoms_done <- read.table("dcm_converted.txt", stringsAsFactors = FALSE)
   dicoms_to_process <- setdiff(dicoms, dicoms_done$V1)
-
+  dicoms <- dicoms_done$V1
+  
 } else {
-   dicoms_done <- 0
-   dicoms_to_process <- setdiff(dicoms, dicoms_done)
-
+  print("No dcm_converted.txt file found. New file will be created")
+   dicoms_to_process <- dicoms
 }
 
-```
+writeLines(c(paste("Dicom folders to process: ", length(dicoms_to_process))))
+writeLines(c(paste("Total dicom folders after conversion:", length(dicoms))))
+  
+# Creation of pathnames for temporary output / Cleaning of filenames (stringr package)
+nii_temp_path <- str_replace(dicoms_to_process, "dicom", "nii_temp") %>%
+  str_replace_all(regex("bidirect_plus|bidirect-plus", ignore_case = TRUE), "") %>%
+  str_replace(regex("bidirect", ignore_case = TRUE), "") %>%
+  str_replace(regex("bibirect|didirect", ignore_case = TRUE), "") %>%
+  str_replace(regex(",_|,,|,|//__"), "") %>%
+  str_replace_all(regex("plus", ignore_case = TRUE), "plus")
 
+
+dicoms_mapping <- cbind(dicoms_to_process, nii_temp_path, deparse.level = 0)
+dicoms_mapping <- data.frame(dicoms = dicoms_to_process,
+                             nii_temp = nii_temp_path,
+                             stringsAsFactors = FALSE)
+
+write.table(dicoms_mapping, "mapping_dicom.txt", row.names = FALSE, col.names = FALSE)
+
+print("Unique identifiers - you should find here only folder names of sessions!")
+
+dicoms_mapping$nii_temp %>% 
+  str_replace("[:digit:]{5}", "") %>%
+  unique() %>%
+  data.frame()
+
+
+
+```
 
 
 # Main step 2: Nii conversion
@@ -100,27 +123,62 @@ Anonymized nii images will be outputted
 -f - filename information
 
 ```{r}
-
-# Creation of pathnames for temporary output
-nii_temp_path <- str_replace(dicoms_to_process, "dicom", "nii_temp") %>%
-  str_replace(regex(",bidirect|_bidirect", ignore_case = TRUE), "")
-
-# Creation of folders
-lapply(nii_temp_path, dir.create, recursive=TRUE)
-
 # Conversion of Dicom 2 Nifti
-for (i in 1:length(dicoms_to_process)) {
-  print(dicoms_to_process[i])
-  dcm2nii(dicoms_to_process[i], 
-          copy_files = FALSE,
-          opts = paste0("-ba y ", "-o ", nii_temp_path[i], " -z y", " -f %d"))
+for (i in 1:length(dicoms_mapping$dicoms)) {
+  print(paste("File " ,i, " of ", length(dicoms_mapping$dicoms), " files processed"))
+
+  print(paste("Old name: ", dicoms_mapping$dicoms[i], "converted to new name: ", dicoms_mapping$nii_temp[i]))
+  
+  # Creation of folders
+  dir.create(dicoms_mapping$nii_temp[i], recursive=TRUE, showWarnings = FALSE)
+  
+  dcm2nii(dicoms_mapping$dicoms[i], 
+          copy_files = FALSE, merge_files = TRUE, ignore_derived = FALSE, dcm2niicmd = "dcm2niix", 
+          opts = paste0("-ba y ", "-o ", dicoms_mapping$nii_temp[i], " -z y", " -f %d"))
+  
+  if (length(dicoms_mapping$dicoms[i]) > 0) {
+  
+    if (file.exists("dcm_converted.txt") == 1) {
+      dicoms <- read.table("dcm_converted.txt", stringsAsFactors = FALSE, header = TRUE)
+      # print("Old dicoms")
+      # print(dicoms)
+      # print("New dicoms")
+      # print(dicoms_mapping[i,])
+      dicoms <- rbind(dicoms, dicoms_mapping[i,])
+    } else {
+      # print(dicoms_mapping[i,])
+      dicoms <- dicoms_mapping[i,]
+      # print("no dcm_converted.txt")
+      # print(dicoms)
+    }
+    write.table(dicoms, "dcm_converted.txt", row.names = FALSE, col.names = TRUE)
+  }
+}
+```
+
+## Test chunk batch loop
+
+not needed now
+
+```{r eval=FALSE}
+for (i in 1:10:length(dicoms_mapping)) {
   
 }
 
 
-write.table(dicoms_to_process, "dcm_converted.txt", row.names = FALSE, col.names = FALSE)
+for (i in seq(1, length(dicoms_mapping$dicoms), 10)) {
+  print(i)
+    a = (seq(i, i+9))
+  
+  print(paste("This is batch ", i, " of ", length(dicoms_mapping$dicoms)/10))
+  
+  for (j in 1:length(a)){
 
+    print(paste(a[j], " data: ", dicoms_mapping$dicoms[a[j]]))
+  }
+}
 ```
+
 
 ## Now that your files are converted and anonymized we take care of getting the data into the BIDS format and move them from the nii_temp folder to the nii folder.
 
@@ -140,15 +198,16 @@ nii_temp_path <- list.files("nii_temp",
 
 ```{r}
 # This is quality control of how your sequences are named (after removing of additional tags)
-str_to_remove = "36Jones20|TFElrsQFOV|fMRsshp|Patient_Aligned_MPR_AWPLAN_|_-_WIP_|_TYPE_BRAIN_|MST_|_Blut"
+str_to_remove = "i000|36Jones20|TFElrsQFOV|fMRsshp|Patient_Aligned_MPR_AWPLAN_|_-_WIP_|_TYPE_BRAIN_|MST_|_Blut"
 
 
 sequences_used <-nii_temp_path %>% 
-  str_replace(".json|.nii.gz", "") %>%
+  str_replace(".json|.nii.gz|.bval|.bvec", "") %>%
   str_replace_all(str_to_remove, "") %>%
   str_split_fixed("/", n = 4)
   
-unique(sequences_used[,4]) %>% sort()
+(seq_used_uniq <- unique(sequences_used[,4]) %>% sort())
+
 ```
 
 # Here you need to manually fit the timepoint and sequence names to your study
@@ -157,15 +216,14 @@ __EDITING NEEDED__ based on your file structure
 
 ```{r}
 
-sequence_types <- c("anat/T1w", "anat/T1w_TFEmod", "anat/T2w", "anat/T2mod", "anat/T2star", "anat/FLAIR", "anat/FLAIR_VISTA",
+sequence_types <- list(new = c("anat/T1w", "anat/T1w_TFEmod", "anat/T2w", "anat/T2mod", "anat/T2star", "anat/FLAIR", "anat/FLAIR_VISTA",
                                "func/rest_133", "func/epi_bold",
                                "dwi/isoRegDTI", "dwi/faRegDTI" , "dwi/dRegDTI", "dwi/facRegDTI", "dwi/RegDTI", "dwi/DTI",
-                               "other/smartplan", "other/survey", "other/smartbrain")
-
-sequence_to_rename <- c("3DT1", "T1W_TFE", "T2W_TSE", "T2mod", "T2_FFE", "FLAIR_TE120", "FLAIR_VISTA",
+                               "other/smartplan", "other/survey", "other/smartbrain"),
+                       old = c("3DT1", "T1W_TFE", "T2W_TSE", "T2mod", "T2_FFE", "FLAIR_TE120", "FLAIR_VISTA",
                         "RS133", "emotional_faces",
                         "isoRegDTI", "faRegDTI" , "dRegDTI", "facRegDTI", regex("^RegDTI"), "^DTI",
-                        "SMARTPLAN", "survey", "SmartBrain")
+                        "SMARTPLAN", "survey", "SmartBrain"))
 
 timepoints <- list(new = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_plus"),
                    old = c("Baseline", "FollowUp1", "FollowUp2", "FollowUp2_plus", "FollowUp3", "FollowUp3_plus"))
@@ -174,13 +232,38 @@ timepoints <- list(new = c("ses1", "ses2", "ses3", "ses3_plus", "ses4", "ses4_pl
 
 ```{r}
 # Output of unique sequence names
-unique(sequences_used[,4]) %>%
+seq_new_uniq <- seq_used_uniq %>%
   str_replace_all(str_to_remove, "") %>%
-  stri_replace_all_fixed(regex(sequence_to_rename), sequence_types, vectorize_all = FALSE) %>%
+  stri_replace_all_fixed(sequence_types$old, sequence_types$new, vectorize_all = FALSE) %>%
+  str_replace_all("DTIn", "DTI") %>%
   str_replace_all("^RegDTI", "dwi/RegDTI") %>%
-  str_replace_all("^DTI", "dwi/DTI") %>%
-  sort()
+  str_replace_all("^DTI", "dwi/DTI")
+
+mapping_sequences <- data.frame(old = seq_used_uniq, new = seq_new_uniq, stringsAsFactors = FALSE) %>%
+  arrange(new)
+
+mapping_sequences %>%
+  arrange(new)
+
+
 ```
+
+```{r}
+if (file.exists("mapping_sequences.txt") == 1) {
+  print("Reading in already existing mapping")
+  mapping_sequences_old <- read.table("mapping_sequences.txt", stringsAsFactors = FALSE, header = TRUE, fill=TRUE)
+  mapping_sequences_diff <- setdiff(mapping_sequences, mapping_sequences_old)
+  print(paste("Appending ", length(mapping_BIDS_diff$old), " files"))
+  mapping_sequences <- rbind(mapping_sequences_old, mapping_sequences_diff)
+  
+} else {
+  print("No mapping_sequences.txt file found. New file will be created")
+}
+
+write.table(mapping_sequences, "mapping_sequences.txt", row.names = FALSE, col.names = TRUE)
+
+```
+
 
 ## Generating new BIDS file paths
 
@@ -188,37 +271,38 @@ unique(sequences_used[,4]) %>%
 sequence_BIDS <- nii_temp_path %>%
   stri_replace_all_fixed(timepoints$old, timepoints$new, vectorize_all = FALSE) %>%
   str_replace_all(str_to_remove, "") %>%
-  stri_replace_all_fixed(sequence_to_rename, sequence_types, vectorize_all = FALSE) %>%
+  stri_replace_all_fixed(sequence_types$old, sequence_types$new, vectorize_all = FALSE) %>%
   str_replace_all("(?<=/)RegDTI", "dwi/RegDTI") %>%
   str_replace_all("(?<=/)DTI", "dwi/DTI") %>%
+    str_replace_all("DTIn", "DTI") %>%
   str_replace_all("nii_temp", "nii") %>%
   str_split_fixed("/", n = 4)
   
 sequence_BIDS <- paste(sequence_BIDS[,1], sequence_BIDS[,3], sequence_BIDS[,2], sequence_BIDS[,4], sep = "/")
-```
 
-## QC: converted_files.csv creation!
+mapping_BIDS <- data.frame(old = nii_temp_path,
+                           new = sequence_BIDS,
+                           stringsAsFactors = FALSE)
+
+mapping_BIDS
+
+```
 
 ```{r}
-# Comparison of original path and renamed version  
-mapping_list <- cbind(nii_temp_path, sequence_BIDS)
-
-
-if (file.exists("converted_files.csv") == 0) {
-  print("Mapping does not exist - writing file")
-  write.csv(mapping_list, "converted_files.csv", row.names = FALSE)
+if (file.exists("mapping_BIDS.txt") == 1) {
+  print("Reading in already existing BIDS mapping")
+  mapping_BIDS_old <- read.table("mapping_BIDS.txt", stringsAsFactors = FALSE, header = TRUE)
+  mapping_BIDS_diff <- setdiff(mapping_BIDS, mapping_BIDS_old)
+  print(paste("Appending ", length(mapping_BIDS_diff$old), " files"))
+  mapping_BIDS <- rbind(mapping_BIDS_old, mapping_BIDS_diff)
   
 } else {
-  print("Other mapping was found 'converted_files.csv'. File opened, additional information added.")
-  read.csv("converted_files.csv", stringsAsFactors = FALSE) %>% 
-    rbind(mapping_list) %>%
-    write.csv("converted_files.csv", row.names = FALSE)
-  
+  print("No mapping_BIDS.txt file found. New file will be created")
 }
 
-head(mapping_list)
-```
+write.table(mapping_BIDS, "mapping_BIDS.txt", row.names = FALSE, col.names = TRUE)
 
+```
 
 
 # Step 3: copying of files and renaming
@@ -236,10 +320,16 @@ for (i in 1:length(BIDS_folders)){
 }
 
 # Reorder the files to the new folders
-file.rename(mapping_list[,1], mapping_list[,2])
+file.rename(mapping_BIDS$old, mapping_BIDS$new)
+
+print("Moving and renaming done")
 
 # Delete 'nii_temp' folder
-unlink("nii_temp", recursive = TRUE)
+if (length(list.files("nii_temp", all.files = TRUE, recursive = TRUE))== 0) {
+  unlink("nii_temp", recursive = TRUE)
+} else {
+  print("nii_temp folder not empty - please take a look at it")
+}
 ```
 
 
