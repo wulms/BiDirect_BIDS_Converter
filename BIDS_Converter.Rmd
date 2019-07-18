@@ -34,7 +34,10 @@ library(dplyr)
 # set here your start folder
 
 ```{r}
-working_dir <- ("/media/niklas/spaceC/Sicherung_BiDirect_Dicoms") 
+rm(list=ls())
+working_dir <- ("/media/niklas/My Book/Bidirect_Dicom/") 
+
+# working_dir <- ("/media/niklas/spaceC/BIDS_Convert_test")
 ```
 
 Working directory is set here
@@ -54,7 +57,7 @@ We need to identify combinations of _timepoint x subject_id_ out of the folder _
 
 ```{r}
 
-rm(list=ls())
+
 
 dicoms <- dir("dicom", full.names = TRUE)
 
@@ -83,10 +86,13 @@ writeLines(c(paste("Total dicom folders after conversion:", length(dicoms))))
   
 # Creation of pathnames for temporary output / Cleaning of filenames (stringr package)
 nii_temp_path <- str_replace(dicoms_to_process, "dicom", "nii_temp") %>%
-  str_replace_all(regex("bidirect_plus|bidirect-plus", ignore_case = TRUE), "") %>%
-  str_replace(regex("bidirect", ignore_case = TRUE), "") %>%
-  str_replace(regex("bibirect|didirect", ignore_case = TRUE), "") %>%
-  str_replace(regex(",_|,,|,|//__"), "") %>%
+  str_replace_all(regex("bidirect_plus|bidirect-plus|bidiect_plus", ignore_case = TRUE), "") %>%
+  str_replace(regex("_bidirect|bidirect", ignore_case = TRUE), "") %>%
+  str_replace(regex("bibirect|didirect|_bidrect|bi direct|bdirect|bi_direct", ignore_case = TRUE), "") %>%
+  str_replace(regex(", |,_|,,|,|\\.|\\__"), "") %>%
+  str_replace(regex("10646_plus", ignore_case = TRUE), "10646") %>%
+  str_replace("30224neu", "30224") %>%
+  str_replace("30250_incl DIR-Sequenz", "30250") %>%
   str_replace_all(regex("plus", ignore_case = TRUE), "plus")
 
 
@@ -102,6 +108,11 @@ print("Unique identifiers - you should find here only folder names of sessions!"
 dicoms_mapping$nii_temp %>% 
   str_replace("[:digit:]{5}", "") %>%
   unique() %>%
+  data.frame()
+
+# inspect these scans! longer filenames!
+dicoms_mapping$nii_temp %>%
+  str_subset(pattern = "/[:digit:]{5}$", negate = TRUE) %>%
   data.frame()
 
 
@@ -253,7 +264,7 @@ if (file.exists("mapping_sequences.txt") == 1) {
   print("Reading in already existing mapping")
   mapping_sequences_old <- read.table("mapping_sequences.txt", stringsAsFactors = FALSE, header = TRUE, fill=TRUE)
   mapping_sequences_diff <- setdiff(mapping_sequences, mapping_sequences_old)
-  print(paste("Appending ", length(mapping_BIDS_diff$old), " files"))
+  print(paste("Appending ", length(mapping_sequences_diff), " files"))
   mapping_sequences <- rbind(mapping_sequences_old, mapping_sequences_diff)
   
 } else {
@@ -276,9 +287,9 @@ sequence_BIDS <- nii_temp_path %>%
   str_replace_all("(?<=/)DTI", "dwi/DTI") %>%
     str_replace_all("DTIn", "DTI") %>%
   str_replace_all("nii_temp", "nii") %>%
-  str_split_fixed("/", n = 4)
+  str_split_fixed("/", n = 5)
   
-sequence_BIDS <- paste(sequence_BIDS[,1], sequence_BIDS[,3], sequence_BIDS[,2], sequence_BIDS[,4], sep = "/")
+sequence_BIDS <- paste(sequence_BIDS[,1], sequence_BIDS[,3], sequence_BIDS[,2], sequence_BIDS[,4], paste0(sequence_BIDS[,3],"-", sequence_BIDS[,5]), sep = "/")
 
 mapping_BIDS <- data.frame(old = nii_temp_path,
                            new = sequence_BIDS,
