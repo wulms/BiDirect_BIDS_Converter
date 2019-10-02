@@ -1,0 +1,300 @@
+---
+title: "BiDirect Neuroimaging Plausible"
+author: "Niklas Wulms"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    theme: lumen
+    highlight : tango
+    code_folding: hide
+    df_print: paged
+    toc: true
+    number_sections: true
+    toc_float: false
+    collapsed: false
+    toc_depth: 5
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 2800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+---
+
+```{r message=FALSE}
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(DT)
+```
+
+
+```{r}
+
+# On Linux
+working_dir <- ("/media/niklas/My Book/Bidirect_Dicom/") 
+
+# On Windows
+# working_dir <- ("H:/Bidirect_Dicom/")
+```
+
+Working directory is set here
+
+```{r setup, message=FALSE}
+require(knitr)
+knitr::opts_knit$set(root.dir = working_dir)
+
+```
+
+
+```{r}
+load("json_all.Rdata")
+```
+
+
+
+# All plausible data
+
+Here is already data excluded for a better overview
+
+```{r}
+json_meta_all <- json_meta_all %>%
+  # Reorder metainformation to front
+  select(group_session_plus, subject, group, session, session_BIDS, ProtocolName, sequence_clean, new_nii, old_nii, sequence,
+         EchoTime, EchoTrain, RepetitionTime, ReconMatrix, SliceThickness, SliceGap, everything())
+```
+
+
+```{r}
+total_summary <- json_meta_all %>%
+  filter(str_detect(bids_type, "nii_implausible") == 0) %>%
+  filter(str_detect(sequence_clean, "_a.nii") == 0) %>%
+  filter(str_detect(sequence_clean, "_e(2|3|4|5|6|7)") == 0) %>%
+  select(plus, bids_type, sequence_clean, -ProtocolName) %>%
+  group_by_all() %>%
+  count() %>%
+  arrange(plus, bids_type) %>%
+  rename(total = n)
+
+
+group_summary <- json_meta_all %>%
+  filter(str_detect(bids_type, "nii_implausible") == 0) %>%
+  filter(str_detect(sequence_clean, "_a.nii") == 0) %>%
+  filter(str_detect(sequence_clean, "_e(2|3|4|5|6|7)") == 0) %>%
+  select(plus, bids_type, sequence_clean, group, -ProtocolName) %>%
+  group_by_all() %>%
+  count() %>%
+  spread(group, n) %>%
+  arrange(plus, bids_type) %>%
+  rename(depression = "1",
+         cvd = "2",
+         control = "3")
+
+left_join(total_summary, group_summary)  %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+```
+
+
+```{r}
+json_meta_all %>%
+  filter(str_detect(bids_type, "nii_implausible") == 0) %>%
+  filter(str_detect(sequence_clean, "_a.nii") == 0) %>%
+  select(plus, group_session, bids_type, sequence_clean, -ProtocolName) %>%
+  group_by_all() %>%
+  count() %>%
+  arrange(sequence_clean) %>%
+  spread(group_session, n)  %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+```
+
+
+
+
+
+# Possible sequences by Protocol name
+
+
+```{r}
+
+json_meta_all %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  select(plus, group_session, bids_type, ProtocolName, sequence, sequence_clean) %>%
+  group_by_all() %>%
+  count() %>%
+  spread(group_session, n) %>%
+  arrange(bids_type) %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+```
+
+
+
+```{r}
+show_sequence <- function(sequence_type) {
+  
+  json_meta_all %>%
+  select(-group_session_plus, -sequence_clean1, -subject, -new_nii, -new_json, -old_nii, -old_json, -AcquisitionTime, -group, -session, -session_BIDS) %>%
+  select(group_session, bids_type, ProtocolName, sequence, sequence_clean, everything()) %>%
+  select(-EchoTime, -RepetitionTime, -ImageOrientationPatientDICOM, -contains("Slope"), -SeriesNumber, -PixelBandwidth) %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, sequence_type) == 1) %>%
+  group_by_all() %>%
+  count() %>%
+  spread(group_session, n) %>%
+  arrange(sequence_clean)  %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+}
+```
+
+
+
+
+# Plausible sequences - base {.tabset}
+
+## T1W
+
+
+```{r}
+show_sequence("/T1w/")
+```
+
+
+## T2_FLAIR
+
+```{r}
+show_sequence("/T2_flair/")
+```
+
+## T2_star
+
+```{r}
+show_sequence("/T2_star/")
+```
+
+## T2w
+
+```{r}
+show_sequence("/T2w/")
+```
+
+## DTI
+
+```{r}
+show_sequence("/DTI/")
+```
+
+## func EF
+
+```{r}
+show_sequence("/EF/")
+```
+
+## func rest
+
+```{r}
+show_sequence("/rest/")
+```
+
+
+
+# Plausible sequences - plus {.tabset}
+
+## T1w mod
+
+```{r}
+show_sequence("/T1w_mod/")
+```
+
+## T2_FLAIR_VISTA
+
+```{r}
+show_sequence("/T2_flair_vista/")
+```
+
+## T2_TSE 2mm 
+
+```{r}
+show_sequence("/T2w_mod")
+```
+
+## mFFE
+
+```{r}
+show_sequence("/T2_star_mod/")
+```
+
+
+
+
+
+
+
+
+
+

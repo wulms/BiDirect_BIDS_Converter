@@ -1,0 +1,227 @@
+---
+title: "move_implausible_files"
+author: "Niklas Wulms"
+date: "7/31/2019"
+output: 
+  html_document:
+    theme: lumen
+    highlight : tango
+    code_folding: hide
+    df_print: paged
+    toc: true
+    number_sections: true
+    toc_float: false
+    collapsed: false
+    toc_depth: 5
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 2800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+---
+
+```{r message=FALSE}
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(DT)
+```
+
+
+```{r}
+
+# On Linux
+working_dir <- ("/media/niklas/My Book/Bidirect_Dicom/") 
+
+# On Windows
+# working_dir <- ("H:/Bidirect_Dicom/")
+```
+
+Working directory is set here
+
+```{r setup, message=FALSE}
+require(knitr)
+knitr::opts_knit$set(root.dir = working_dir)
+
+```
+
+
+```{r}
+load("json_all.Rdata")
+
+```
+
+#
+
+```{r}
+
+json_meta_all %>% select(bids_type) %>% group_by_all() %>% count()
+```
+
+```{r}
+
+view_files <- function(df, filter) {
+  df <- df %>%
+  filter(str_detect(bids_type, filter) == 1) %>%
+  select(bids_type, old_nii, new_nii, old_json, new_json) %>%
+  mutate(source = str_replace_all(old_nii, "[:digit:]{5}", ""),
+         target = str_replace_all(new_nii, "[:digit:]{5}", ""))
+
+  df
+
+  df %>% select(bids_type, source, target) %>% group_by_all() %>% count()
+}
+
+json_nii_merge <- function(df, filter) {
+    df <- df %>%
+  filter(str_detect(bids_type, filter) == 1) %>%
+  select(bids_type, old_nii, new_nii, old_json, new_json)
+  
+  input <- cbind(df$old_nii, df$new_nii)
+  print(head(input))
+  output <- cbind(df$old_json, df$new_json)
+  print(head(output))
+
+  paths <- rbind(input, output)
+  
+  paths_folder <- sub("[/][^/]+$", "", paths[,2])
+  print(head(paths_folder))
+  
+  df2 <- data.frame(input = paths[,1], 
+                    output = paths[,2],
+                    output_folder = paths_folder)
+  
+  df2
+}
+  
+create_folders <- function(folders) {
+  folders2 <- as.character(unique(folders))
+  
+  folders3 <- folders2[file.exists(folders2) == 0]
+  
+  lapply(folders3, dir.create, recursive = TRUE)
+
+  # lapply(folders2, dir.create, recursive = TRUE)
+}
+
+file_move <- function(df) {
+  files_to_move <- df[file.exists(as.character(df$input)) == 1, ]
+  
+  file.rename(as.character(files_to_move$input), as.character(files_to_move$output))
+}
+
+file_copy <- function(df) {
+  files_to_copy <- df[file.exists(as.character(df$output)) == 0, ]
+  file.copy(as.character(files_to_copy$input), as.character(files_to_copy$output))
+}
+
+file_move2 <- function(df, filter) {
+  df2 <- json_nii_merge(df, filter)
+  create_folders(df2$output_folder)
+  file_move(df2)
+}
+
+file_copy2 <- function(df, filter) {
+  df2 <- json_nii_merge(df, filter)
+  create_folders(df2$output_folder)
+  file_copy(df2)
+}
+
+```
+
+
+```{r}
+view_files(json_meta_all, "Smartbrains")
+
+file_move2(json_meta_all, "Smartbrains")
+```
+```{r}
+view_files(json_meta_all, "clin")
+view_files(json_meta_all, "Strange")
+view_files(json_meta_all, "test")
+
+view_files(json_meta_all, "anat/")
+view_files(json_meta_all, "dwi/")
+view_files(json_meta_all, "func/")
+
+```
+
+
+```{r}
+file_move2(json_meta_all, "clin")
+file_move2(json_meta_all, "Strange")
+file_move2(json_meta_all, "test")
+```
+
+# Move bval/bvecs
+
+```{r}
+dwis_plausible <- json_meta_all %>%
+  filter(str_detect(bids_type, "dwi/") == 1) %>%
+  mutate(old_nii = str_replace(old_nii, ".nii.gz", ".bval"),
+         new_nii = str_replace(new_nii, ".nii.gz", ".bval"),
+         old_json = str_replace(old_json, ".json", ".bvec"),
+         new_json = str_replace(new_json, ".json", ".bvec"))
+
+view_files(dwis_plausible, "dwi/")
+
+file_move2(dwis_plausible, "dwi/")
+
+dwis_clin <- json_meta_all %>%
+  filter(str_detect(bids_type, "clin_dwi") == 1) %>%
+  mutate(old_nii = str_replace(old_nii, ".nii.gz", ".bval"),
+       new_nii = str_replace(new_nii, ".nii.gz", ".bval"),
+       old_json = str_replace(old_json, ".json", ".bvec"),
+       new_json = str_replace(new_json, ".json", ".bvec"))
+
+view_files(dwis_clin, "dwi")
+
+file_move2(dwis_clin, "dwi")
+
+
+```
+
+
+
+# Duplicates
+
+these sequences are copied here! You have to choose which to take using a selected_duplicates.xls
+
+```{r}
+load("duplicates.Rdata")
+
+view_files(nii_duplicates, "anat|dwi|func")
+
+nii_duplicates <- nii_duplicates %>%
+  mutate(new_nii = str_replace(old_nii, "nii_temp", "duplicates"),
+         new_json = str_replace(old_json, "nii_temp", "duplicates"))
+
+df <- json_nii_merge(nii_duplicates, "anat|dwi|func") 
+
+folders <- as.character(df$output_folder) %>% unique()
+
+create_folders(folders)
+
+file.copy(as.character(df$input), as.character(df$output))
+```
+
+
+```{r}
+#json_nii_merge(json_meta_all, "anat/")
+
+file_move2(json_meta_all, "anat/")
+file_move2(json_meta_all, "dwi/")
+file_move2(json_meta_all, "func/")
+```
+
+# Clean up empty folders
+```{r}
+system("find nii_temp -type d -empty -delete")
+```
+
+
+

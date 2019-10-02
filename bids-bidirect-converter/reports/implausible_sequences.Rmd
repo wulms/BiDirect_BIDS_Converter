@@ -1,0 +1,338 @@
+---
+title: "BiDirect Neuroimaging Plausible"
+author: "Niklas Wulms"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    theme: lumen
+    highlight : tango
+    code_folding: hide
+    df_print: paged
+    toc: true
+    number_sections: true
+    toc_float: false
+    collapsed: false
+    toc_depth: 5
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 2800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+---
+
+```{r message=FALSE}
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(DT)
+```
+
+
+```{r}
+
+# On Linux
+working_dir <- ("/media/niklas/My Book/Bidirect_Dicom/") 
+
+# On Windows
+# working_dir <- ("H:/Bidirect_Dicom/")
+```
+
+Working directory is set here
+
+```{r setup, message=FALSE}
+require(knitr)
+knitr::opts_knit$set(root.dir = working_dir)
+
+```
+
+
+```{r}
+load("json_all.Rdata")
+
+```
+
+
+
+
+
+
+# Excluded sequences {.tabset}
+
+## reason
+
+Here are the reasons for exclusion listed  
+
+
+- reason _clin (dti/t1/vista)_ 
+  - means clinical preprocessed sequences from scanner 
+  - (these are derived from the unprocessed images)
+  - these are a lot 
+- reason _Smartbrain_
+  - these sequences are only needed for alignment of the FOV in the scanner
+  - no research purpose
+  - these are a lot
+- reason _double_ 
+  - duplicate sequences
+  - (identical parameters/time)
+  - as well as different parameters or acquisition time
+  - these are < 100 sequences, they need a manual checkup
+
+  
+
+```{r}
+json_meta_all %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  filter(str_detect(bids_type, "Smartbrains") == 0) %>%
+  group_by(group_session, bids_type) %>%
+  count()  %>%
+  spread(group_session, n) %>%
+   #mutate(Sum = rowSums(select(., Gr_1_Ses_1:Gr_3_Ses_4), na.rm = TRUE))
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+```
+
+
+## Excluded and implausible sequences
+
+```{r}
+json_meta_all %>%
+  select(plus, bids_type, ProtocolName, sequence, sequence_clean, group_session) %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  group_by_all() %>%
+  count() %>%
+  spread(group_session, n) %>%
+  arrange(bids_type, plus ,sequence_clean)  %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+```
+
+## Excluded additional clinical (scanner converted) scans (WIP, Reg)
+
+These sequences were converted in the scanner.
+For further analysis only the raw images are needed.
+
+```{r}
+json_meta_all %>%
+  select(plus, bids_type, ProtocolName, sequence, sequence_clean, group_session) %>%
+  filter(str_detect(bids_type, "clin") == 1) %>%
+  group_by_all() %>%
+  count() %>%
+  spread(group_session, n)  %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+
+```
+
+
+
+
+## Smartbrains - these are excluded in further analyses
+
+```{r}
+json_meta_all %>%
+  select(plus, bids_type, ProtocolName, sequence, sequence_clean, group_session) %>%
+  filter(str_detect(bids_type, "Smartbrain") == 1) %>%
+  group_by_all() %>%
+  count() %>%
+  spread(group_session, n)  %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+
+```
+
+
+
+# These individual sequences need a manual checkup {.tabset}
+
+## Duplicates (without Smartbrains or Clinical (scanner preprocessed) sequences)
+
+Smartbrains or Clinical Scans are excluded from the duplicate detection!
+
+```{r}
+json_meta_all %>%
+  select(new_nii, subject, session, bids_type) %>%
+  filter(str_detect(new_nii, "Smartbrain|clin") == 0) %>%
+  filter(str_detect(new_nii, pattern = "_(a|b|c).nii") == 1) %>%
+  select(-new_nii) %>%
+  left_join(json_meta_all) %>%
+  select(old_json, new_nii, everything()) %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+```
+
+
+## Duplicates 
+
+turned off - to many subjects (27000)
+```{r eval=FALSE}
+json_meta_all %>%
+  filter(str_detect(bids_type, "nii_implausible") == 0) %>%
+  filter(str_detect(sequence_clean, "_a.nii") == 1) %>%
+  select(plus, group_session, bids_type, sequence_clean, -ProtocolName) %>%
+  group_by_all() %>%
+  count() %>%
+  arrange(sequence_clean) %>%
+  spread(group_session, n)  %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+```
+
+
+## Strange parameters
+
+These sequences show strong deviations from the standard sequences
+
+```{r}
+json_meta_all %>%
+  filter(str_detect(bids_type, "Strange") == 1) %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+
+```
+
+
+## Excluded Testmessungen
+
+These sequences were used to test sequences and are not needed for further analysis.
+
+```{r}
+json_meta_all %>%
+  filter(str_detect(bids_type, "test") == 1) %>%
+  datatable(filter = 'top', 
+            extensions = list('Buttons' = NULL,
+                              'Scroller' = NULL,
+                              'ColReorder' = NULL),
+            
+            options = list(
+                           dom = 'Bfrtip', 
+                           buttons = list(c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                          I('colvis')),
+                           deferRender = TRUE,
+                           scrollX = 600,
+                           scrollY = 700, 
+                           scroller = TRUE,
+                           ColReorder = TRUE,
+                           pageLength = 20
+                           )
+    )
+
+
+
+```
+
+
+
+
+
+
+
+
