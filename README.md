@@ -1,6 +1,24 @@
 # BiDirect_BIDS_Converter
 
-The algorithm works as described below:
+## to do (needs implementation)  
+- __optional__ "anonymization.csv"  
+  - for changing folder names - left(old name), right (new name)  
+- Markdown tables for Github/Gitlab  
+
+
+This script sorts the DICOM data of the BiDirect study into BIDS file format using following libraries:
+
+Dicom-to-NifTi conversion
+- wrapper for Chris Rordens DCM2NII
+- using system() command
+
+File renaming  
+- stringr (for the renaming stuff and regular expressions)  
+
+Tidyverse (dplyr, tidyr, stringr)
+
+
+## The algorithm works as described below:
 
 - __dcm_converter.Rmd__  
   - it indices a _dicom_ root folder with subfolders _(dicoms/survey/participant)_  
@@ -25,28 +43,11 @@ In a second step the _nii_ files in the _nii_temp_ folder will be moved and rena
 
 
 
-## to do (needs implementation)  
-- __optional__ "anonymization.csv"  
-  - for changing folder names - left(old name), right (new name)  
-- Markdown tables for Github/Gitlab  
-
-
-=======
-
-This script sorts the DICOM data of the BiDirect study into BIDS file format using following libraries:
-
-Dicom-to-NifTi conversion
-- wrapper for Chris Rordens DCM2NII
-- using system() command
-
-File renaming  
-- stringr (for the renaming stuff and regular expressions)  
-
-Tidyverse (dplyr, tidyr, stringr)
 
 
 
-# Prerequisites
+
+## Prerequisites
 
 _Computer_:
 - R and RStudio
@@ -110,7 +111,7 @@ FollowUp3_Plus -> ses4_plus
 #### standard nomenclature 
 
 __anat__:  
-_T1w_
+_T1w_  
 _T2w_  
 _T2_star_  
 _T2_flair_  
@@ -123,7 +124,7 @@ __dwi__:
 _DTI_  
 
 __plus__ (only at ses3 and ses4, additional high resolution scans for 200 subjects):  
-_T1w_mod_ 
+_T1w_mod_  
 _T2w_mod_  
 _T2_star_mod_  
 _T2_flair_VISTA_  
