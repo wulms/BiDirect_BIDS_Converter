@@ -29,11 +29,8 @@ library(dplyr)
 ```{r setup}
 rm(list=ls())
 
-# On Linux
-working_dir <- ("/media/niklas/My Book/Bidirect_Dicom/") 
 
-# On Windows
-# working_dir <- ("H:/Bidirect_Dicom/")
+working_dir <- ("/media/niklas/My Book/Bidirect_Dicom/") 
 
 require(knitr)
 knitr::opts_knit$set(root.dir = working_dir)
@@ -113,7 +110,8 @@ dicoms_mapping
 
 # Main step 2: Nii conversion
 
-here a loop reads in the dicoms (that dont have the suffix "_done") and converts them. Then changes the folder name to "_done".
+A loop reads in the dicoms (that dont have the suffix "_done") and converts them. Then changes the folder name to "_done".
+(optional parallelization feature?)
 
 Anonymized nii images will be outputted
 

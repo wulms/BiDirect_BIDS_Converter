@@ -1,5 +1,8 @@
 # BiDirect_BIDS_Converter
 
+[![DOI](https://zenodo.org/badge/195199025.svg)](https://zenodo.org/badge/latestdoi/195199025)
+
+
 ## to do (needs implementation)  
 - __optional__ "anonymization.csv"  
   - for changing folder names - left(old name), right (new name)  
@@ -101,12 +104,12 @@ USING THE SCRIPTS
 
 #### longitudinal codebook
 
-Baseline -> ses1  
-FollowUp1 -> ses2  
-FollowUp2 -> ses3  
-FollowUp2_Plus -> ses3_plus  
-FollowUp3 -> ses4  
-FollowUp3_Plus -> ses4_plus  
+Baseline -> s0 
+FollowUp1 -> s2
+FollowUp2 -> s4
+FollowUp2_Plus -> s4_plus  
+FollowUp3 -> s6 
+FollowUp3_Plus -> ses6_plus  
 
 #### standard nomenclature 
 
