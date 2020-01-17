@@ -1,0 +1,1012 @@
+---
+  title: "BiDirect BIDS Overview"
+output: 
+  flexdashboard::flex_dashboard:
+  vertical_layout: scroll
+source_code: embed
+---
+  
+  ```{r setup, include=FALSE}
+library(flexdashboard)
+library(stringr)
+library(tidyr)
+library(stringi)
+library(dplyr)
+library(printr)
+library(DT)
+library(forcats)
+library(lubridate)
+library(highcharter)
+
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# On Linux
+working_dir <- ("/mnt/TB8Drive/Bidirect_Neuroimaging/") 
+knitr::opts_knit$set(root.dir = working_dir)
+
+setwd(working_dir)
+```
+
+```{r echo=FALSE}
+load("json_all.Rdata")
+json_meta_all2 <- json_meta_all2 %>% ungroup() %>%
+  mutate(PatientID = str_extract(PatientID, "[:digit:]{5}"),
+         PatientName = str_extract(PatientID, "[:digit:]{5}"),
+         AcquisitionDate = ymd_hms(AcquisitionDateTime) %>% date())
+
+json_short <- json_meta_all2 %>%
+  select(subject, session, AcquisitionDate, PatientBirthDate, PatientSex, PatientWeight) %>% unique()
+
+```
+
+```{r include=FALSE}
+dicoms <- dir("DICOM", full.names = TRUE)
+
+dicoms <- unlist(lapply(dicoms, FUN = dir, 
+                        recursive = FALSE, 
+                        full.names = TRUE)) 
+
+dicoms_to_process <- dicoms
+
+
+# Creation of pathnames for temporary output / Cleaning of filenames (stringr package)
+nii_temp_path <-
+  str_replace(dicoms_to_process, "DICOM", "NII_temp") %>%
+  str_replace_all(regex("(bidirect_plus|bidirect-plus|bidiect_plus)", ignore_case = TRUE),
+                  "") %>%
+  str_replace_all(regex("(_bidirect|bidirect)", ignore_case = TRUE), "") %>%
+  str_replace_all(
+    regex(
+      "(bibirect|didirect|_bidrect|bi direct|bdirect|bi_direct)",
+      ignore_case = TRUE
+    ),
+    ""
+  ) %>%
+  str_replace(regex(", |,_|,,|,|\\.|\\__"), "") %>%
+  str_replace(regex("10646_plus", ignore_case = TRUE), "10646") %>%
+  str_replace("30224neu", "30224") %>%
+  str_replace("30250_incl DIR-Sequenz", "30250") %>%
+  str_replace_all(regex("plus", ignore_case = TRUE), "plus") %>%
+  str_replace("10738eigentlich_|_RS|RS|T2TSE|ABBRUCH", "")
+
+
+dicoms_mapping <-
+  cbind(dicoms_to_process, nii_temp_path, deparse.level = 0)
+dicoms_mapping <- data.frame(dicoms = dicoms_to_process,
+                             nii_temp = nii_temp_path,
+                             stringsAsFactors = FALSE)
+
+survey_order <- c("Baseline", "FollowUp", "FollowUp2", "FollowUp3", "FollowUp2_plus", "FollowUp3_plus")
+
+dicoms_mapping <- dicoms_mapping %>%
+  mutate(id = str_extract(nii_temp, "[:digit:]{5}"),
+         cohort = str_sub(id, 1, 1),
+         cohort = fct_recode(cohort, "depression" = "1", "cardiovascular disease" = "2", "general_population" = "3") %>%
+           fct_relevel("general_population", "depression", "cardiovascular disease"),
+         survey = str_remove_all(nii_temp, "[:digit:]{5}|NII_temp/|/") %>% as.factor(),
+         survey = fct_relevel(survey, survey_order),
+         n = 1)
+
+
+
+```
+
+
+Overview
+=================
+  - here you find the information about BIDS type and new sequence name
+
+Column {data-width=50}
+--------
+  
+  ### Folders
+  
+  ```{r echo=FALSE}
+folder_count <- length(dicoms) %>% round(0)
+
+valueBox(folder_count, 
+         icon = "fa-folder-open", 
+         caption = "DICOM folders", 
+         color = "green")
+```
+
+
+### Total converted files
+
+```{r echo=FALSE}
+converted_count <- length(json_meta_all2$new_nii3) %>% round(0)
+
+valueBox(converted_count, 
+         icon = "fa-angle-double-right", 
+         caption = "Converted NII files", 
+         color = "green")
+```
+
+### Count plausible
+
+```{r echo=FALSE}
+plausible_base <- json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "highres") == 0)
+
+plausible_base_count <- str_detect(plausible_base$bids_type, "implausible", negate = TRUE) %>% sum()
+
+valueBox(plausible_base_count, 
+         icon = "fa-smile-beam", 
+         caption = "Plausible files - Base", 
+         color = "green")
+```
+
+### Count plausible Plus
+
+```{r echo=FALSE}
+plausible_plus <- json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "highres") == 1)
+
+plausible_plus_count <- str_detect(plausible_plus$bids_type, "implausible", negate = TRUE) %>% sum()
+
+valueBox(plausible_plus_count, 
+         icon = "fa-smile-beam", 
+         caption = "Plausible files - Plus ", 
+         color = "green")
+```
+
+### Count implausible
+
+```{r echo=FALSE}
+implausible <- json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 1)
+
+implausible_count <- str_detect(implausible$bids_type, "implausible") %>% sum()
+
+valueBox(implausible_count, 
+         icon = "fa-minus-square", 
+         caption = "Implausible files", 
+         color = "green")
+```
+
+
+Column {data-width=150}
+--------
+  
+  ### Plausible Base 
+  
+  ```{r echo=FALSE}
+
+hchart(plausible_base$bids_type, "column")
+```
+
+
+
+### Plausible Plus
+
+```{r echo=FALSE}
+
+
+hchart(plausible_plus$bids_type, "column")
+```
+
+
+### Implausible
+
+```{r echo=FALSE}
+
+hchart(implausible$bids_type, "column")
+```
+
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+  
+  ### Overview of JSONS per participant and survey of base_protocol
+  
+  ```{r echo=FALSE}
+
+json_meta_all2 %>%
+  ungroup() %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(plus , "plus") == 0) %>%
+  add_count(bids_type, name = "total") %>%
+  group_by(bids_type, plus, total, session) %>%
+  count() %>%
+  spread(session, n)%>%
+  ungroup() %>%
+  arrange(plus) %>%
+  DT::datatable(caption = 'Table 2: N of participants per survey (total) and separately by cohort.',
+                colnames = c('Survey' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+
+```
+
+### Overview of JSONS per participant and survey of plus_protocol
+
+```{r echo=FALSE}
+
+json_meta_all2 %>%
+  ungroup() %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(plus , "plus") == 1) %>%
+  add_count(bids_type, name = "total") %>%
+  group_by(bids_type, plus, total, session) %>%
+  count() %>%
+  spread(session, n)%>%
+  ungroup() %>%
+  arrange(plus) %>%
+  DT::datatable(caption = 'Table 2: N of participants per survey (total) and separately by cohort.',
+                colnames = c('Survey' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+
+```
+
+Input data
+==================
+  
+  Here you find the count of all DICOM folders at each survey.
+
+Column {data-width=250}
+-----------------------------------------------------------------------
+  
+  ### List of folders per subject - Conversion from DICOM into the NIfTI folder
+  
+  
+  
+  ```{r echo=FALSE}
+DT::datatable(dicoms_mapping,
+              caption = 'Table 1: This is the old and the new foldername (where the converted files are saved).',
+              colnames = c('DICOM folder' = 1, "NIfTI" = 2),
+              rownames = FALSE,
+              options = list(pageLength = 20))
+
+
+```
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+  
+  ### Removed appendices - these are removed from the filenames to enable a clean structure in the subject folders
+  
+  ```{r echo=FALSE}
+dicoms_mapping %>%
+  select(dicoms) %>%
+  mutate(dicoms = str_remove_all(dicoms, "DICOM/|Baseline/|FollowUp/|FollowUp2/|FollowUp3/|FollowUp2_(p|P)lus/|FollowUp3_(p|P)lus/") %>%
+           str_remove("[:digit:]{5}")) %>%
+  count(dicoms) %>%
+  DT::datatable(caption = 'Table 2: Redundant appendices, that are removed to clean up the filenames',
+                colnames = c('Removed Appendices' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 15))
+```
+
+
+### Not identified filenames - This table should be empty! Otherwise the filename was not equal to 5 digits.
+
+```{r echo=FALSE}
+dicoms_mapping %>%
+  select(nii_temp) %>%
+  filter(str_detect(nii_temp, pattern = "/[:digit:]{5}$", negate = TRUE) == 1) %>%
+  DT::datatable(caption = 'Table 3: Identified strings that do not match 5 digits in filename',
+                colnames = c('Survey' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 8))
+```
+
+Column {data-width=200}
+-----------------------------------------------------------------------
+  
+  ### Summary table per survey and cohort
+  
+  ```{r echo=FALSE}
+
+
+dicoms_mapping %>%
+  select(survey, cohort) %>%
+  add_count(survey, name = "total") %>%
+  group_by_all() %>%
+  count() %>%
+  spread(cohort, n) %>%
+  DT::datatable(caption = 'Table 4: N of participants per survey (total) and separately by cohort.',
+                colnames = c('Survey' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 8))
+
+
+input_summary <- dicoms_mapping %>%
+  count(survey, cohort)
+
+
+hchart(input_summary, "column", hcaes(x = survey, y = n, group = cohort))
+```
+
+
+
+
+
+
+File renaming
+=================
+  - here you find the information about renaming the old sequence names to the new sequence_clean
+
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+  
+  ### JSON mapping (sequence name vs BIDS name) - Base - plausible sequences (include / keep)
+  
+  ```{r echo=FALSE}
+json_meta_all2 %>%
+  ungroup() %>%
+  filter(str_detect(plus, "plus") == 0) %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  select(bids_type, sequence, sequence_clean) %>%
+  arrange(bids_type) %>%
+  group_by_all() %>%
+  count() %>%
+  DT::datatable(caption = 'Table 1: Sequences (N) BASE of participants per survey (total) and separately by cohort.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+```
+
+### JSON mapping (sequence name vs BIDS name) - Plus - plausible sequences (include / keep)
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  ungroup() %>%
+  filter(str_detect(plus, "plus") == 1) %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(sequence, "e(2|3|4|5|6|7)") == 0) %>%
+  select(bids_type, sequence, sequence_clean) %>%
+  arrange(bids_type) %>%
+  group_by_all() %>%
+  count() %>%
+  DT::datatable(caption = 'Table 2: Sequences (N) PLUS of participants per survey (total) and separately by cohort.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+```
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+  
+  ### JSON mapping (sequence name vs BIDS name) - implausible sequences (exclude / delete)
+  
+  ```{r echo=FALSE}
+json_meta_all2 %>%
+  ungroup() %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  select(bids_type, sequence, sequence_clean) %>%
+  arrange(bids_type) %>%
+  group_by_all() %>%
+  count() %>%
+  DT::datatable(caption = 'Table 3: Sequences (N) IMPLAUSIBLE of participants per survey (total) and separately by cohort.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+```
+
+
+
+Duplicates
+================
+  
+  Column {data-width=300}
+-----------------------------------------------------------------------
+  
+  ### Duplicates based on BIDS type
+  
+  ```{r echo=FALSE}
+json_meta_all2 %>%
+  select(subject, session, bids_type) %>%
+  group_by_all() %>% count() %>% filter(n != 1 & n != 7) %>%
+  filter(str_detect(bids_type, "implausible|Smartbrains|T2star_ph_highres|T2_star_highres") == 0)  %>% left_join(json_meta_all2) %>%
+  select(session, session, new_nii3) %>%
+  DT::datatable(caption = 'Table 1: Duplicate Sequences, filtered by bids_type.',
+                colnames = c('Filename' = 4),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+```
+
+### Duplicate sequences (implausible)
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  select(session, subject, bids_type, session, new_nii3) %>%
+  filter(str_detect(new_nii3, "-(a|b|c)") == 1 & str_detect(new_nii3, "implausible") == 1) %>%
+  DT::datatable(caption = 'Table 2: Duplicate sequences (implausible) indicated by a -a/b/c in filename.',
+                colnames = c('Filename' = 4),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+```
+
+Column {data-width=250}
+-----------------------------------------------------------------------
+  
+  ### Duplicate sequences (no unique filename) - empty is good!
+  
+  ```{r echo=FALSE}
+json_meta_all2 %>%
+  select(new_nii3) %>%
+  group_by_all() %>%
+  count() %>% filter (n != 1) %>%
+  DT::datatable(caption = 'Table 3: Sequences, that have the same filename.',
+                colnames = c('ID' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+```
+
+
+ID plausibility
+==================
+  - identifiable information (gender, age, weight, acquisition date)
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+  
+  ### ID differences (filename, PatientID, PatientName) - empty is good!
+  
+  ```{r echo=FALSE}
+
+json_meta_all2 %>%
+  select(subject, PatientID, PatientName) %>% unique() %>%
+  group_by_all() %>% count() %>%
+  filter(n > 1) %>%
+  select(-n) %>%
+  DT::datatable(caption = 'Table 1: Participants with differences between the id variables',
+                colnames = c('ID' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 20))
+
+
+```
+
+### Implausible Birthdates
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  select(subject, PatientBirthDate) %>%
+  filter(str_detect(PatientBirthDate, "-07-01") == 0) %>%
+  arrange(subject) %>%
+  group_by_all() %>%   unique() %>% ungroup () %>% add_count(subject) %>%
+  #  filter(n != 1) %>%
+  left_join(json_short) %>%
+  select(-PatientSex, -PatientWeight, -n) %>%
+  DT::datatable(caption = 'Table 2: Participants with implausible birthdate (not -07-01 coded)',
+                colnames = c('ID' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 10))
+```
+
+### Change in Birthdates between Surveys
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  select(subject, PatientBirthDate) %>%
+  arrange(subject) %>%
+  group_by_all() %>%   unique() %>% ungroup () %>% add_count(subject) %>%
+  filter(n != 1) %>%
+  left_join(json_short) %>%
+  select(-PatientSex, -PatientWeight, -n) %>%
+  DT::datatable(caption = 'Table 3: Participants with a change in BirthDate',
+                colnames = c('ID' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 10))
+```
+
+### Change in Sex between Surveys
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  select(subject, PatientSex) %>%
+  arrange(subject) %>%
+  group_by_all() %>%   unique() %>% ungroup() %>% add_count(subject) %>%
+  filter(n != 1) %>%
+  left_join(json_short) %>%
+  select(-PatientBirthDate, -PatientWeight, -n) %>%
+  DT::datatable(caption = 'Table 4: Participants with a change in Sex',
+                colnames = c('ID' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 10))
+```
+
+### Change in AcquisitionDate between Surveys
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  select(subject, session, AcquisitionDate) %>%
+  arrange(subject) %>%
+  group_by_all() %>%   unique() %>% group_by(subject, session) %>% count() %>% 
+  filter(n != 1) %>%
+  left_join(json_short) %>%
+  select(-PatientBirthDate, -PatientWeight, -PatientSex, -n) %>%
+  DT::datatable(caption = 'Table 5: Participants with a change in AcquisitionDate',
+                colnames = c('ID' = 1),
+                rownames = FALSE,
+                options = list(pageLength = 10))
+```
+
+
+
+MRI parameters - Base
+===================
+  
+  Here you can explore the physical properties of the sequence parameters
+
+Column
+------------------------
+  
+  ### T1w
+  
+  ```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "T1w") == 1) %>%
+  filter(str_detect(plus, "plus") == 0) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 3) %>%  
+  mutate_at(c("PixelBandwidth"), round, -1) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 1: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(256,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+
+```
+
+### FLAIR
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "FLAIR") == 1) %>%
+  filter(str_detect(plus, "plus") == 0) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 3) %>% 
+  mutate_at(c("PixelBandwidth"), round, -2) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 2: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(257, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(512,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(257, c('lightblue')))
+
+```
+
+### T2w
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "T2w/") == 1) %>%
+  filter(str_detect(plus, "plus") == 0) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 2) %>%  
+  mutate_at(c("PixelBandwidth"), round, -1) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 3: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(319, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(512,c('lightblue')))%>%
+  formatStyle('RepetitionTime', backgroundColor = styleEqual(3,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(319, c('lightblue')))
+
+```
+
+### T2w_star
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "T2w_star") == 1) %>%
+  filter(str_detect(plus, "plus") == 0) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 2) %>%  
+  mutate_at(c("PixelBandwidth"), round, -1) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 4: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(205, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(512,c('lightblue')))%>%
+  formatStyle('SliceGap', backgroundColor = styleEqual(5,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(205, c('lightblue')))
+
+```
+
+### DWI
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "DTI") == 1) %>%
+  filter(str_detect(plus, "plus") == 0) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%  
+  mutate_at(c("PixelBandwidth"), round, -1) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 5: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) 
+
+```
+
+### rest
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "rest") == 1) %>%
+  filter(str_detect(plus, "plus") == 0) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%  
+  mutate_at(c("PixelBandwidth"), round, -2) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 6: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20))
+
+```
+
+### Emotional Faces
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "EF") == 1) %>%
+  filter(str_detect(plus, "plus") == 0) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%  
+  mutate_at(c("PixelBandwidth"), round, -1) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 7: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(256,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+
+```
+
+MRI parameters - Plus
+===================
+  
+  Column
+------------------------
+  
+  ### T1w highres
+  
+  ```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "T1w_highres") == 1) %>%
+  filter(str_detect(plus, "plus") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>% 
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 3) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 1: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(512,c('lightblue')))%>%
+  formatStyle('SliceGap', backgroundColor = styleEqual(0.5,c('lightblue')))%>%
+  formatStyle('SliceThickness', backgroundColor = styleEqual(1, c('lightblue')))
+```
+
+### FLAIR highres
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "FLAIR_highres") == 1) %>%
+  filter(str_detect(plus, "plus") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>% 
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 2: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('SliceThickness', backgroundColor = styleEqual(1.2, c('lightblue'))) %>%
+  formatStyle('SliceGap', backgroundColor = styleEqual(0.6,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+```
+
+### T2star highres
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "T2star_ph") == 1) %>%
+  filter(str_detect(plus, "plus") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>% 
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 2) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 3: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) 
+```
+
+### T2star ph highres
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "T2star_h") == 1) %>%
+  filter(str_detect(plus, "plus") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>% 
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 2) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 4: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) 
+```
+
+### T2w highres
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 0) %>%
+  filter(str_detect(bids_type, "T2w_highres") == 1) %>%
+  filter(str_detect(plus, "plus") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>% 
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%  
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 5: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(228, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(512, c('lightblue')))%>%
+  formatStyle('RepetitionTime', backgroundColor = styleEqual(3, c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(228, c('lightblue')))
+```
+
+
+
+MRI parameters - implausible
+===================
+  
+  Column
+------------------------
+  
+  ### T1w
+  
+  ```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  filter(str_detect(bids_type, "T1w") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 1: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(256,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+```
+
+### FLAIR
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  filter(str_detect(bids_type, "flair") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 2: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(256,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+```
+
+
+### T2w_Star
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  filter(str_detect(bids_type, "T2w_star") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 3: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(256,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+```
+
+
+### dwi
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  filter(str_detect(bids_type, "dwi") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 4: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(256,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+```
+
+### Strange
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  filter(str_detect(bids_type, "Strange") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 5: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(256,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+```
+
+### Smartbrains
+
+```{r echo=FALSE}
+json_meta_all2 %>%
+  filter(str_detect(bids_type, "implausible") == 1) %>%
+  filter(str_detect(bids_type, "Smart") == 1) %>%
+  select(bids_type, AcqMatrix, ReconMatrix, SliceThickness, SliceGap, RepetitionTime, 
+         EchoTime, EchoTrain, FlipAngle, PhaseEncodingSteps, PixelBandwidth, 
+         SAR, PhaseDirection, Averages, PartialFourier, MRType, SoftwareVersions) %>%
+  mutate_at(c("EchoTime", "PartialFourier", "SAR"), round, 2) %>%
+  mutate_at(c("RepetitionTime"), round, 4) %>%
+  group_by_all() %>% count() %>% arrange(desc(n)) %>% select(bids_type, n, everything()) %>%
+  DT::datatable(caption = 'Table 6: Sequences, filtered by bids_type.',
+                colnames = c('BIDS_type' = 1),
+                rownames = FALSE,
+                filter = 'top', 
+                options = list(pageLength = 20)) %>%
+  formatStyle('AcqMatrix', backgroundColor = styleEqual(255, c('lightblue'))) %>%
+  formatStyle('ReconMatrix', backgroundColor = styleEqual(256,c('lightblue')))%>%
+  formatStyle('PhaseEncodingSteps', backgroundColor = styleEqual(255, c('lightblue')))
+```
+
+
+MRI QC
+===================
+  
+  Column
+------------------------
+  
+  Container use possible!  
+  ETA: about 50 min. per Subject/Session  
+
+Quality metrices for T1w, T2w and functional sequences  
+
+
+
+fMRIprep
+===================
+  
+  Column
+------------------------
+  
+  Container use possible!  
+  ETA: about 11 h per Subject (freesurfer processing pipeline)  
+
+- T1w and functional sequences processing pipeline
+
+
+
+Derivatives
+===================
+  
+  Column
+------------------------
+  
+  Already calculated:  
+  
+  _T1w_:  VBM (CAT12)  
+_DTI_: PSMD Marker, FA (native/normalized), MD (native/normalized)  
+
+_FLAIR_: (on 201 subjects) BIANCA, LST Toolbox, LesionBrain, CAT12 WMH detection  
+planned: DeepMedic, OASIS
+
+
