@@ -9,8 +9,9 @@
 ## create folders
 
 
+## Stop 1: indexig input folders - abort function - user edit needed
 
-## dicom2niix
+## dicom2niix - dependent on user_settings/
 
 
 
@@ -21,14 +22,16 @@
 ## json wrangling
 
 
-
-## Dashboard
-
+##Stop 2: diagnostic outputs, user input check, is renaming plausible? What to you want to apply?
 
 
-## nii_temp2BIDS
+## Dashboard - check for "do.txt" - dependent on user_settings/
 
 
-## Export2Cooperate
+
+## nii_temp2BIDS - check for "do.txt"
+
+
+## Export2Cooperate - check for other .txt file than "export_template.txt"
 
 
