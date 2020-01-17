@@ -21,8 +21,9 @@ Furthermore, a Docker version is on its way, which is planned to be easy to use 
 
 This script sorts the DICOM data of the BiDirect study into BIDS file format using following libraries:
 
+Docker (which implements dcm2niix, debian, and the needed R libraries)
+
 Dicom-to-NifTi conversion
-- Docker (which implements dcm2niix, debian, and the needed R libraries)
 - wrapper for Chris Rordens DCM2NII
   - working on Philips DICOMS
 - using system() command
