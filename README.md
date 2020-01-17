@@ -1,27 +1,121 @@
 # BiDirect_BIDS_Converter
 
+This tool is a project of my PhD. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, Wilhelms-University, Münster, Germany). 
+
+Here you find the generalizable version for your own datasets (on Philips tested), the release will be in around 2 weeks from now (first week of February 2020).
+
 [![DOI](https://zenodo.org/badge/195199025.svg)](https://zenodo.org/badge/latestdoi/195199025)
 
+The next update is coming! We implemented a Dashboard, which shows information about the whole study, acquired data, detail information on sequences, header information and plausility checks (id, gender, scanner sequence settings, duplicate sequences.
+
+Furthermore, a Docker version is on its way, which is planned to be easy to use and with the possibility to use in an ongoing study.
 
 ## to do (needs implementation)  
 - __optional__ "anonymization.csv"  
-  - for changing folder names - left(old name), right (new name)  
-- Markdown tables for Github/Gitlab  
+  - for changing subject ids - left(old name), right (new name)  
+- diagnostic output: Markdown tables for Github/Gitlab
+- debugging information
+- testing Siemens/GE dcm2niix conversion
+
 
 
 This script sorts the DICOM data of the BiDirect study into BIDS file format using following libraries:
 
 Dicom-to-NifTi conversion
+- Docker (which implements dcm2niix, debian, and the needed R libraries)
 - wrapper for Chris Rordens DCM2NII
+  - working on Philips DICOMS
 - using system() command
 
 File renaming  
 - stringr (for the renaming stuff and regular expressions)  
-
-Tidyverse (dplyr, tidyr, stringr)
+File management
+- Tidyverse (dplyr, tidyr, stringr)
 
 
 ## The algorithm works as described below:
+
+### Requirements
+
+- a study folder as root directory
+ - a folder named DICOM, with a folder for each session (your session IDs: eg. Baseline, FollowUp1, etc) 
+  - in these folders the subjects of that session, containing the DICOM folders
+  - you have to think about your subject nomenclature - if you have a naming scheme (e.g. 5 digits, the first on coding the group), other naming conventions are set by regular expressions later
+  
+### Container start
+
+- The container is started using the command "docker run - ..... " (coming). 
+Here your study folder (containing the DICOM folder) is mounted into the container and Docker can write files to it.
+
+### Output folders and user interaction folders
+
+- folder creation:
+  - __BIDS/sourcedata__ - the output folder for your dataset in BIDS format
+    - _dont.txt_ - change to _do.txt_ AFTER checking with the Dashboard and __user diagnostics__ that your settings are working.
+  - __NII_temp__ - write out folder for the anonymized dcm2niix converted files and headers. Do NOT delete these files. Each session is a folder, containing all subjects folders. Take care, it is dependent on the right subject nomenclature in the user_settings/pattern_remove.txt). The files are not in BIDS format but converted to NIIGZ.
+  - __NII_headers__ - write out folder only for dicom headers (same structure as NII_temp), but these headers are NOT anonymized. It is used for plausibility checks (ID, gender, birthdate, weight, acquisition date).
+  - __Export_Cooperation__
+    - _export_template_ template file, change the information and rename the file to enable BIDS export for a cooperation partner.
+  - __user_information__ - write out folder for information files regarding the renaming and conversion procedures
+  - __user_diagnostics__ - write out folder for diagnostics
+  - __user_settings__ - write out folder for the files, that you have to edit manually in a spreadsheet. All these files will be checked for not assigned values and inconsistencies, so that the code inhibits the further processing steps.  If you have e.g. subjects, that does not fit into your subject regex the code aborts - this is functionality to keep your output data clean and affects all "user_settings" files. Debugging messages will be implemented!
+    - _pattern_remove.txt_ - is created before the dcm2niix conversion runs. Script aborts here, if the information below is not added or updated.
+      - subjects: [:digit:]{5} - regular expression indicating 5 digits for the subject name. Find out how your naming convention for the subjects is. If you have subjects-ids like AB01 you can set this regex: [:alpha:]{2}[:digit:]{2}. For other setups look into the "stringr Cheat Sheet", page 2 - hostet by RStudio.
+      - group: regex, where the group id in the filename is. In my case I can extract the first digit from the 5 digit subject id using [:digit:]{1}(?=[:digit:]{4}) - translated to "extract the one digit, which is followed by 4 other digits. Please think about adding it to the filename, because further file selection is much easier.
+      - remove: Here you can add regex or absolute tags, that you want to remove from the foldername, e.g. ",BiDirect" in my case to have a clearly structured subject id.
+      - This file is checked every one, to find the already processed output folders, but also to keep sure, that your nomenclature works.
+    - _BIDS_session_mapping.csv_ - 
+      - Here you give your sessions a renaming nomenclature if needed (Baseline = 1, FollowUp = 2, or something else). 
+    - _BIDS_mapping.csv_ - This is the file, that needs the most work. You map each of the automatically identified sequences in your dataset to a BIDS Standard name (T1w, T2w, FLAIR, ect...). Do NOT add filename extensions (eg.".nii" or ".nii.gz"). They will be added automatically to add NII and JSON data to your BIDS dataset (requirement of BIDS). The right nomenclature also identifies the bids tags _anat/dwi/func_ of your input data. If the detection is misleading just contact me!
+    Then you can label in the "relevant" column, which files are relevant and not relevant for you. This affects, which output you want to copy to the BIDS folder! Please check the diagnostics folder, if your mapping is correct.
+  - __Dashboard__ contains the rendered Dashboard if enabled, based on the extracted JSON information. Change _dont.txt_ to _do.txt_ if you want to enable the Dashboard. Only possible after the editing the _BIDS_mapping.csv_. 
+
+You see, that you only have to ineract with 3 scripts! If something is implausible, the tool will give you in future the exact filename, where something is missing. 
+
+
+### Functions
+
+__Folder indexing__ reads the input foldernames of the subjects.
+
+__First stop__: Writes outputs to the _user_settings/pattern_remove.txt_ and the _user_settings/BIDS_session_mapping.csv_ which you have do edit, before the next step runs. When edited restart the container!
+
+__Dcm2niix__ by Chris Rorden is used to output all anonymized NIIGZ subject sequences into the _NII_temp_ folder, also outputting another set of not anonymized JSON headers to the __NII_header__ folder. Time amount is the same as in manual processing.
+
+
+__JSON header name indexing__ finds all NOT ANONYMIZED json files from the _NII_headers_ folder. Takes care, that all information in each header is contained. It only extracts the attribute names of the sequence, to build a dataframe that can contain every attribute later on. If you encounter an error, I need information on the used header. Takes about 5-10 minutes when you have lot of files (90,000 in BiDirect).
+
+__JON attribute extraction__ uses the general attribute name structure derived by the __JSON header name indexing__ to join all attributes into the structure. Errors here indicate a list item in the json header, where the function is not able to join it into the dataframe structure. Takes about 10-15 minutes when you have a lot of files (90,000 in BiDirect).
+ 
+Your data is now converted and only needs further information .
+
+__Second stop__: Writes outputs of the identified unique sequence names to _user_settings/BIDS_mapping.csv_. Now you have to set an BIDS filename to each sequence id and have to decide, which sequences you want to keep. If all information is set start the container again.
+
+From here on, you have different options, because all information is set.
+
+__Dashboard Creation__ is a crucial step, to understand your data and check for implausibilities
+
+__Copy2Bids__ copies your relevant sequences and the JSON headers to the BIDS standard, please check, if the anat/dwi/func detection worked out, using the Dashboard.
+
+Interaction: To enable __Copy2Bids__ change the _dont.txt_ to the filename _do.txt_. I know, that it is not the best way to interact with a script, but I am now 2 weeks into Docker.
+
+__Export2Cooperation__ copies your selected sequences, subjects, groups, sessions to __Export__ folder for sharing with collaborators. 
+
+Interaction: Change the _export_template.txt_ to the needed export functionality - giving a study_name, select the groups (eg. 1|2 translates to 1 & 2, but not 3) and the session (0|1 translates to 0 & 1, but not to 2), the same counts for the sequence (T1w|task-rest_bold exports only T1w and task-rest_bold sequences). 
+
+## General information
+
+- I provided template files, that you have to edit, to make the use more easy.
+- Everytime you start the Container all the above steps run. If you habe new subjects added, you need to apply the new information to the _.csv files_ in the __user_settings__ folder again. The older information from before is kept. If you delete the files, you need to set them up again, to get the process running.
+- The implemented stops are only conducted, when manual editing is needed and a debug message is shown. E.g. a new subject, session or sequence was identified. 
+- We implemented lazy processing, so that already converted files or extracted information is NOT extracted twice to enable functionality from the beginning of a study to the end.
+
+## Known issues
+
+- Mainly based on misleading information provided by the user on the BIDS standard
+- Based on scanner properties in the JSON header - list items in it lead to problems in the joining of all information
+
+
+### Old Readme - will be removed soon
 
 - __dcm_converter.Rmd__  
   - it indices a _dicom_ root folder with subfolders _(dicoms/survey/participant)_  
