@@ -19,7 +19,7 @@ Furthermore, a Docker version is on its way, which is planned to be easy to use 
 
 
 
-This script sorts the DICOM data of the BiDirect study into BIDS file format using following libraries:
+## This script sorts the DICOM data of the BiDirect study into BIDS file format using following libraries:
 
 Docker (which implements dcm2niix, debian, and the needed R libraries)
 
@@ -52,23 +52,24 @@ Here your study folder (containing the DICOM folder) is mounted into the contain
 
 - folder creation:
   - __BIDS/sourcedata__ - the output folder for your dataset in BIDS format
-    - _dont.txt_ - change to _do.txt_ AFTER checking with the Dashboard and __user diagnostics__ that your settings are working.
-  - __NII_temp__ - write out folder for the anonymized dcm2niix converted files and headers. Do NOT delete these files. Each session is a folder, containing all subjects folders. Take care, it is dependent on the right subject nomenclature in the user_settings/pattern_remove.txt). The files are not in BIDS format but converted to NIIGZ.
+    - _dont.txt_ - change to _do.txt_ AFTER checking with the __Dashboard__ and __user diagnostics__ that your settings are working.
+  - __NII_temp__ - write out folder for the anonymized dcm2niix converted files and headers. Do NOT delete these files. Each session is a folder, containing all subjects folders. Take care, it is dependent on the right subject nomenclature in the _user_settings/pattern_remove.txt_). The files are not in BIDS format but converted to NIIGZ.
   - __NII_headers__ - write out folder only for dicom headers (same structure as NII_temp), but these headers are NOT anonymized. It is used for plausibility checks (ID, gender, birthdate, weight, acquisition date).
   - __Export_Cooperation__
-    - _export_template_ template file, change the information and rename the file to enable BIDS export for a cooperation partner.
+    - _export_template_ file, change the information and rename the file to enable BIDS export for a cooperation partner. _Export_output_BIDS_ folder is saved here.
   - __user_information__ - write out folder for information files regarding the renaming and conversion procedures
   - __user_diagnostics__ - write out folder for diagnostics
   - __user_settings__ - write out folder for the files, that you have to edit manually in a spreadsheet. All these files will be checked for not assigned values and inconsistencies, so that the code inhibits the further processing steps.  If you have e.g. subjects, that does not fit into your subject regex the code aborts - this is functionality to keep your output data clean and affects all "user_settings" files. Debugging messages will be implemented!
-    - _pattern_remove.txt_ - is created before the dcm2niix conversion runs. Script aborts here, if the information below is not added or updated.
+    - _pattern_remove.txt_ - is created before the dcm2niix conversion runs. Script aborts here, if the information below is not overwritten.
       - subjects: [:digit:]{5} - regular expression indicating 5 digits for the subject name. Find out how your naming convention for the subjects is. If you have subjects-ids like AB01 you can set this regex: [:alpha:]{2}[:digit:]{2}. For other setups look into the "stringr Cheat Sheet", page 2 - hostet by RStudio.
       - group: regex, where the group id in the filename is. In my case I can extract the first digit from the 5 digit subject id using [:digit:]{1}(?=[:digit:]{4}) - translated to "extract the one digit, which is followed by 4 other digits. Please think about adding it to the filename, because further file selection is much easier.
       - remove: Here you can add regex or absolute tags, that you want to remove from the foldername, e.g. ",BiDirect" in my case to have a clearly structured subject id.
-      - This file is checked every one, to find the already processed output folders, but also to keep sure, that your nomenclature works.
+      - This file is checked every run, to identify the already processed output folders, but also to keep sure, that your nomenclature works.
     - _BIDS_session_mapping.csv_ - 
       - Here you give your sessions a renaming nomenclature if needed (Baseline = 1, FollowUp = 2, or something else). 
-    - _BIDS_mapping.csv_ - This is the file, that needs the most work. You map each of the automatically identified sequences in your dataset to a BIDS Standard name (T1w, T2w, FLAIR, ect...). Do NOT add filename extensions (eg.".nii" or ".nii.gz"). They will be added automatically to add NII and JSON data to your BIDS dataset (requirement of BIDS). The right nomenclature also identifies the bids tags _anat/dwi/func_ of your input data. If the detection is misleading just contact me!
-    Then you can label in the "relevant" column, which files are relevant and not relevant for you. This affects, which output you want to copy to the BIDS folder! Please check the diagnostics folder, if your mapping is correct.
+      - This file is checked every run to identify new sessions.
+    - _BIDS_mapping.csv_ - This is the file, that needs the most work. You map each of the automatically identified sequences in your dataset to a BIDS Standard name (T1w, T2w, FLAIR, ect...). Do NOT add filename extensions (eg.".nii" or ".nii.gz"). They will be added automatically to add NII and JSON data to your BIDS dataset (requirement of BIDS). The right nomenclature also identifies the bids tags _anat/dwi/func_ based on your input data. If the detection is misleading just contact me!
+    Then you can label binary in the "relevant" column, which files are relevant (1) and not relevant (0) for you. This affects, which output you want to copy to the BIDS folder! Please check the diagnostics folder, if your mapping is correct. Here you can uncheck for instance Smartbrains or scanner-derived processings.
   - __Dashboard__ contains the rendered Dashboard if enabled, based on the extracted JSON information. Change _dont.txt_ to _do.txt_ if you want to enable the Dashboard. Only possible after the editing the _BIDS_mapping.csv_. 
 
 You see, that you only have to ineract with 3 scripts! If something is implausible, the tool will give you in future the exact filename, where something is missing. 
@@ -80,22 +81,22 @@ __Folder indexing__ reads the input foldernames of the subjects.
 
 __First stop__: Writes outputs to the _user_settings/pattern_remove.txt_ and the _user_settings/BIDS_session_mapping.csv_ which you have do edit, before the next step runs. When edited restart the container!
 
-__Dcm2niix__ by Chris Rorden is used to output all anonymized NIIGZ subject sequences into the _NII_temp_ folder, also outputting another set of not anonymized JSON headers to the __NII_header__ folder. Time amount is the same as in manual processing.
+__Dcm2niix__ by Chris Rorden is used to output all anonymized NIIGZ subject sequences into the __NII_temp__ folder, also outputting another set of not anonymized JSON headers to the __NII_header__ folder. Time amount is the same as in manual processing.
 
 
 __JSON header name indexing__ finds all NOT ANONYMIZED json files from the _NII_headers_ folder. Takes care, that all information in each header is contained. It only extracts the attribute names of the sequence, to build a dataframe that can contain every attribute later on. If you encounter an error, I need information on the used header. Takes about 5-10 minutes when you have lot of files (90,000 in BiDirect).
 
-__JON attribute extraction__ uses the general attribute name structure derived by the __JSON header name indexing__ to join all attributes into the structure. Errors here indicate a list item in the json header, where the function is not able to join it into the dataframe structure. Takes about 10-15 minutes when you have a lot of files (90,000 in BiDirect).
+__JSON attribute extraction__ uses the general attribute name structure derived by the __JSON header name indexing__ to join all attributes into the structure. Errors here indicate a list item in the json header, where the function is not able to join it into the dataframe structure. Takes about 10-15 minutes when you have a lot of files (90,000 in BiDirect).
  
-Your data is now converted and only needs further information .
+#### Your data is now converted and the header information extracted. Now you need to enter further information to map input sequence to BIDS sequence.
 
-__Second stop__: Writes outputs of the identified unique sequence names to _user_settings/BIDS_mapping.csv_. Now you have to set an BIDS filename to each sequence id and have to decide, which sequences you want to keep. If all information is set start the container again.
+__Second stop__: Writes outputs of the identified unique sequence names to _user_settings/BIDS_mapping.csv_. Now you have to set an BIDS filename to each sequence id and have to decide, which sequences you want to keep. If all information is set start the container again and decide, which functionality you would like to enable.
 
-From here on, you have different options, because all information is set.
+If you entered the required information, you have different options for the next run, because all information is set and all your data is processed.
 
 __Dashboard Creation__ is a crucial step, to understand your data and check for implausibilities
 
-__Copy2Bids__ copies your relevant sequences and the JSON headers to the BIDS standard, please check, if the anat/dwi/func detection worked out, using the Dashboard.
+__Copy2Bids__ copies your relevant sequences and the JSON headers to the BIDS standard, please check, if the anat/dwi/func detection worked out, using the Dashboard. I am working on adding the BIDS-required JSON files containing study and sequence information, so that you can pass the BIDS-Validator.
 
 Interaction: To enable __Copy2Bids__ change the _dont.txt_ to the filename _do.txt_. I know, that it is not the best way to interact with a script, but I am now 2 weeks into Docker.
 
@@ -105,10 +106,11 @@ Interaction: Change the _export_template.txt_ to the needed export functionality
 
 ## General information
 
-- I provided template files, that you have to edit, to make the use more easy.
-- Everytime you start the Container all the above steps run. If you habe new subjects added, you need to apply the new information to the _.csv files_ in the __user_settings__ folder again. The older information from before is kept. If you delete the files, you need to set them up again, to get the process running.
+- I provided template files, that you have to edit. I think, that this makes the use more easy for you.
+- Everytime you start the Container all the above steps run. If you have new subjects added to the __DICOM__ folder, you maybe need to edit the new information in the _.csv files_ or the __user_settings__ folder again. The older information from before is kept. If you delete the files, you need to set them up again, to get the process running.
 - The implemented stops are only conducted, when manual editing is needed and a debug message is shown. E.g. a new subject, session or sequence was identified. 
 - We implemented lazy processing, so that already converted files or extracted information is NOT extracted twice to enable functionality from the beginning of a study to the end.
+- If something strange happens, delete every other folder than the DICOM folder and run the script again.
 
 ## Known issues
 
