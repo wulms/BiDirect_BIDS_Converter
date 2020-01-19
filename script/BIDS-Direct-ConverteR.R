@@ -1,15 +1,23 @@
 # BIDS-Direct-ConverteR
 
+## general setup
+source("functions/functions.R")
 
+setwd(working_dir)
+## Create directories for outputs
+lapply(directories, dir.create, recursive = TRUE, showWarnings = FALSE)
 
-## load libraries
-
-
-
-## create folders
+# Create templates
+write_csv(session_variables, "user_settings/example_session.csv")
+write_csv(as.data.frame(template_variables), "user_settings/example_study_info.csv")
 
 
 ## Stop 1: indexig input folders - abort function - user edit needed
+dicoms_mapping <- list_dicom_folders("DICOM")
+
+directories_DICOM2 <- clean_foldernames(template_variables$remove_pattern_regex)
+
+
 
 ## dicom2niix - dependent on user_settings/
 
@@ -34,4 +42,4 @@
 
 ## Export2Cooperate - check for other .txt file than "export_template.txt"
 
-
+setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
