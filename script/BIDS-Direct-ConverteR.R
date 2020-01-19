@@ -15,6 +15,11 @@ write_csv(as.data.frame(template_variables), "user_settings/example_study_info.c
 ## Stop 1: indexig input folders - abort function - user edit needed
 dicoms_mapping <- list_dicom_folders("DICOM")
 
+
+### read user settings file with the patterns for subjects, group and strings to remove
+
+### apply these settings and check for inplausible patterns
+
 directories_DICOM2 <- clean_foldernames(template_variables$remove_pattern_regex)
 
 
