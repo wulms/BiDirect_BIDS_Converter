@@ -12,28 +12,31 @@ list_dicom_folders <- function(input_folder) {
   }
 
 clean_foldernames <- function(pattern_remove) {
+  
   dicoms_mapping %>%
     mutate(subjects_BIDS = your_subject_id %>% str_remove_all("[:punct:]{1}|[:blank:]{1}") %>%
              str_remove_all(regex("plus", ignore_case = TRUE)) %>%
              str_remove_all(regex(pattern_remove, ignore_case = TRUE)) %>%
              str_remove("10738BiDirecteigentlich"),
-           nii_temp = paste0(directories$NII_temp_dir, survey, "/", subjects_new))
+           group_BIDS = str_extract(subjects_BIDS, user_study_info$group_id_regex),
+           session_BIDS = stri_replace_all_regex(your_session_id, user_session_info$your_session_id, user_session_info$session_BIDS, vectorize_all = FALSE),
+           nii_temp = paste0(directories$NII_temp_dir, "/", session_BIDS, "/", subjects_BIDS))
 }
 
-diag_mapping <- function(df) {
-  df %>%
-    select(subjects_old, subjects_new) %>%
-    mutate(subjects_old = str_remove(subjects_old, patterns$subjects),
-           subjects_new = str_remove(subjects_new, patterns$subjects)) %>%
-    group_by_all() %>%
-    count()
-}
-
-diag_implausible_names <- function(df) {
-  df %>%
-    select(nii_temp) %>%
-    filter(str_detect(nii_temp,pattern = paste0("/", patterns$subjects, "$"), negate = TRUE) == 1)
-}
+# diag_mapping <- function(df) {
+#   df %>%
+#     select(subjects_old, subjects_new) %>%
+#     mutate(subjects_old = str_remove(subjects_old, patterns$subjects),
+#            subjects_new = str_remove(subjects_new, patterns$subjects)) %>%
+#     group_by_all() %>%
+#     count()
+# }
+# 
+# diag_implausible_names <- function(df) {
+#   df %>%
+#     select(nii_temp) %>%
+#     filter(str_detect(nii_temp,pattern = paste0("/", patterns$subjects, "$"), negate = TRUE) == 1)
+# }
 
 
 dcm2niix_anonymized <- function(input, output) {
@@ -66,7 +69,13 @@ dcm2niix_anonymized <- function(input, output) {
         input[i]
       )
     print(system_string)
-    system(system_string)
+    if(file.exists(paste0(output[i], "/done.txt")) == 0){
+      system(system_string)
+      write_file("", paste0(output[i], "/done.txt"))
+    } else {
+      print(paste0("This folder was already processed: ", output[i], " ---- skipping to next participant."))
+    }
+    
   }
 }
 
@@ -86,7 +95,7 @@ dcm2niix_header_extraction <- function(input, output) {
     
     system_string <-
       paste0(
-        "/home/niklas/Downloads/dcm2niix_lnx/dcm2niix ",
+        dcm2niix_path, "dcm2niix ",
         " -b o ",
         # BIDS sidecar and anonymization - o outputs only HEADER files!
         #   "-x n ", # crop 3d
@@ -99,10 +108,15 @@ dcm2niix_header_extraction <- function(input, output) {
         #    "-t y ", # private text informations
         #   "-v 0 ", # verbose turned off
         #   "-w 0 ", # skips overwriting when name is conflicting
-        # "-f %d ",
+        "-f %d -w 0 ",
         input[i]
       )
     print(system_string)
-    system(system_string)
+    if(file.exists(paste0(output[i], "/done.txt")) == 0){
+      system(system_string)
+      write_file("", paste0(output[i], "/done.txt"))
+    } else {
+      print(paste0("This folder was already processed: ", output[i], " ---- skipping to next participant."))
+    }
   }
 }

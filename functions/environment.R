@@ -1,7 +1,7 @@
 # create environment variables
 
 working_dir <- "/home/niklas/BIDS_test"
-dcm2niix_path <- "/home/niklas/Downloads/dcm2niix_lnx/"
+dcm2niix_path <- "/home/niklas/Downloads/"
 
 directories <- list(
   "NII_temp_dir"= "NII_temp",
@@ -23,7 +23,7 @@ session_variables <- data.frame(
 template_variables <- list(
   "study_name" = "BiDirect",
   "scanner_manufacturer" = "Philips",
-  "subject_id_regex" = "[:digit:]{5}",
+  "subject_id_regex" = "^[:digit:]{5}$",
   "group_id_regex" = "[digit:]{1}(<=?[:digit:]{4}",
   "remove_pattern_regex" = "((b|d)i(d|b)i|bid|bd|bdi)(ect|rect)($|(rs|T2TSE|inclDIRSequenz|neu|abbruch))")
 

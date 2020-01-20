@@ -1,4 +1,4 @@
-get_json_headers <- function(json) {
+  get_json_headers <- function(json) {
   # The function reads the variable names from each header (without extracting the actual attributes) - This is a crucial step before applying read_json_headers.
   # Output is an empty dataframe containing the headers, where in the next step the information is added to.
   tic()
