@@ -21,7 +21,7 @@ difference_check_jsons <- function(json, json_csv) {
                             #row.names = 0
     )$Path
     
-    print(head(json_proc))
+    #print(head(json_proc))
     #json_processed <- json_proc$Path
     
     # checks for already processed jsons

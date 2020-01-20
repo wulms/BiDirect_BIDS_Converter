@@ -123,9 +123,54 @@ if(file.exists("user_settings/sequence_info.csv") == 1) {
 
 ## json wrangling
 
+print("Starting json2bids renaming. Read 'user_settings/sequence_info.csv'")
+user_sequence_info <- read_csv("user_settings/sequence_info.csv") 
+relevant_sequences <- user_sequence_info %>% select(sequence_id_BIDS, relevant) %>% unique()
+difference_check_jsons(json_metadata, "json_files.csv")
+
+## json headers need extraction every time - one sequence with another attribute can crash the whole table
+df_json_headers <- get_json_headers(json_files$json_files)
+read_json_headers(json_files$json_files, df_json_headers)
+
+
+
+json_metadata <- read_csv("json_files.csv") %>% 
+  mutate(json_files = Path,
+         your_session_id = str_split(json_files, "/", simplify = TRUE)[,2],
+         your_subject_id = str_split(json_files, "/", simplify = TRUE)[,3],
+         your_sequence_id = str_split(json_files, "/", simplify = TRUE)[,4] %>% str_remove(".json")) %>%
+  mutate(subject_id_BIDS = your_subject_id %>% str_remove_all("[:punct:]{1}|[:blank:]{1}") %>%
+           str_remove_all(regex("plus", ignore_case = TRUE)) %>%
+           str_remove_all(regex(user_study_info$remove_pattern_regex, ignore_case = TRUE)) %>%
+           str_remove("10738BiDirecteigentlich"),
+         group_BIDS = str_extract(subject_id_BIDS, user_study_info$group_id_regex),
+         session_id_BIDS = stri_replace_all_regex(your_session_id, user_session_info$your_session_id, user_session_info$session_BIDS, vectorize_all = FALSE),
+         sequence_id_BIDS = stri_replace_all_regex(your_sequence_id, paste0("^",user_sequence_info$your_sequence_id,"$"), user_sequence_info$sequence_id_BIDS, vectorize_all = FALSE),
+         path_BIDS = paste0(directories$BIDS_dir, "/", subject_id_BIDS, "/", session_id_BIDS, "/sub-", subject_id_BIDS, "_ses-", session_id_BIDS, "_", sequence_id_BIDS)) %>%
+  left_join(relevant_sequences, by = "sequence_id_BIDS")
 
 ##Stop 2: diagnostic outputs, user input check, is renaming plausible? What to you want to apply?
 
+diag_double_sequences <- relevant_sequences %>%
+  group_by(sequence_id_BIDS) %>%
+  count() %>% filter(n > 1)
+
+diag_implausible_settings <- json_metadata %>%
+  filter(!(relevant %in% c(0,1))|
+         !(sequence_id_BIDS %in% user_sequence_info$sequence_id_BIDS)|
+         !(session_id_BIDS %in% user_session_info$session_BIDS)|
+         str_detect(subject_id_BIDS, user_study_info$subject_id_regex) == 0)
+
+diag_duplicates <- json_metadata %>%
+  select(subject_id_BIDS, session_id_BIDS, sequence_id_BIDS) %>%
+  group_by_all() %>%
+  count() %>%
+  filter(n > 1)
+
+diag_duplicate_paths <- json_metadata %>%
+  select(path_BIDS) %>%
+  group_by_all() %>%
+  count() %>% filter(n > 1)
 
 ## Dashboard - check for "do.txt" - dependent on user_settings/
 
