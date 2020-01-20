@@ -1,7 +1,7 @@
 index_jsons <- function(path) {
   
   tic()
-  json <- list.files(path = paste0(working_dir, path),
+  json <- list.files(path = paste0(path),
                      pattern = ".json",
                      full.names = TRUE,
                      recursive=TRUE,
