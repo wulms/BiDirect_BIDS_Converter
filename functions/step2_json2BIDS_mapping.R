@@ -26,7 +26,7 @@ difference_check_jsons <- function(json, json_csv) {
     
     # checks for already processed jsons
     json_diff <- setdiff(json, json_proc)
-    print(head(json_diff))
+    # print(head(json_diff))
     return(json_diff)
   } else {
     print("No json_files.csv exists - will be created in the next steps")

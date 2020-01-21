@@ -13,8 +13,9 @@ Furthermore, a Docker version is on its way, which is planned to be easy to use 
 ## to do (needs implementation)  
 - __optional__ "anonymization.csv"  
   - for changing subject ids - left(old name), right (new name)  
+- anonymization using pydeface or fsl_deface for sharing anonymized (header + image) files. 
 - diagnostic output: Markdown tables for Github/Gitlab
-- debugging information
+- consistent debugging information
 - testing Siemens/GE dcm2niix conversion
 
 
