@@ -10,10 +10,13 @@ Here you find the generalizable version for your own datasets (on Philips tested
 
 
 ```bash
-├── BIDS
+├── BIDS - output folder of your data to BIDS standard
 │   ├── export
 │   └── sourcedata
 ├── BIDS_anonymized (in work) - anonymizing structural images using pydeface or fsl_deface
+│   └── sourcedata
+├── BIDS_export (in work) - select sequences, sessions and subjects/groups, you want to export.
+│   │      These will be copied here.
 │   └── sourcedata
 ├── BIDS_template (these are templates you have to edit and move into the sourcedata/ 
 │   │     directories)
@@ -34,10 +37,10 @@ Here you find the generalizable version for your own datasets (on Philips tested
 │   │   └── 10005_your_study
 ├── json_files.csv
 ├── NII_headers <- non-anonymized DICOM headers (containing subject-id, gender, weight,        
-│   │      acquisition date)
+│   │      acquisition date) - only JSON
 │   ├── s0
 │   └── s2
-├── NII_temp <- anonymized DICOM headers
+├── NII_temp <- anonymized DICOM headers written to JSON + NII temporary folder
 │   ├── s0
 │   └── s2
 ├── user_information
