@@ -15,7 +15,8 @@ Here you find the generalizable version for your own datasets (on Philips tested
 │   └── sourcedata
 ├── BIDS_anonymized (in work) - anonymizing structural images using pydeface or fsl_deface
 │   └── sourcedata
-├── BIDS_template (these are templates you have to edit and move into the sourcedata/ directories)
+├── BIDS_template (these are templates you have to edit and move into the sourcedata/ 
+│   │     directories)
 │   ├── CHANGES
 │   ├── dataset_description.json
 │   └── README
@@ -33,7 +34,7 @@ Here you find the generalizable version for your own datasets (on Philips tested
 │   │   └── 10005_your_study
 ├── json_files.csv
 ├── NII_headers <- non-anonymized DICOM headers (containing subject-id, gender, weight,        
-│      acquisition date)
+│   │      acquisition date)
 │   ├── s0
 │   └── s2
 ├── NII_temp <- anonymized DICOM headers
@@ -41,7 +42,7 @@ Here you find the generalizable version for your own datasets (on Philips tested
 │   └── s2
 ├── user_information
 │   ├── 1_dcm2niix_paths.csv - file for qc of path renaming DICOM2NIIX step (your subject- and 
-│         session-id to BIDS-subject- and BIDS-session-id)
+│   │         session-id to BIDS-subject- and BIDS-session-id)
 │   └── 2_sequence2BIDS_renaming.csv - file for qc of sequence renaming from /NII_temp to /BIDS
 └── user_settings
     ├── example_session.csv - template file
