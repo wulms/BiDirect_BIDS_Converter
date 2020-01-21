@@ -9,7 +9,7 @@ Here you find the generalizable version for your own datasets (on Philips tested
 # General folder structure (will be created - you only need the DICOM Folder!)
 
 
-
+```bash
 ├── BIDS
 │   ├── export
 │   └── sourcedata
@@ -32,22 +32,28 @@ Here you find the generalizable version for your own datasets (on Philips tested
 │   │   ├── 10004_my_Study
 │   │   └── 10005_your_study
 ├── json_files.csv
-├── NII_headers <- non-anonymized DICOM headers (containing subject-id, gender, weight, acquisition date)
+├── NII_headers <- non-anonymized DICOM headers (containing subject-id, gender, weight,        
+│      acquisition date)
 │   ├── s0
 │   └── s2
 ├── NII_temp <- anonymized DICOM headers
 │   ├── s0
 │   └── s2
 ├── user_information
-│   ├── 1_dcm2niix_paths.csv - file for qc of path renaming DICOM2NIIX step (your subject- and session-id to BIDS-subject- and BIDS-session-id)
+│   ├── 1_dcm2niix_paths.csv - file for qc of path renaming DICOM2NIIX step (your subject- and 
+│         session-id to BIDS-subject- and BIDS-session-id)
 │   └── 2_sequence2BIDS_renaming.csv - file for qc of sequence renaming from /NII_temp to /BIDS
 └── user_settings
     ├── example_session.csv - template file
     ├── example_study_info.csv - template file
-    ├── sequence_info.csv - Codebook for sequences (identified by file output name of dcm2niix conversion, '3Dmprage' to 'T1w', please read the BIDS specification)
-    ├── session_info.csv - Codebook for session (identified by input folder name 'Baseline', 'FollowUp', map your output (eg. 0 and 1)
-    └── study_info.csv - Codebook for general study information, regex for subjects ([:digit:]{5} in our case), patterns to remove ('_your_study|_yr_stdy|_my_Study') and group id regex ([:digit:]{1}(<=?[:digit:]{4}))
-
+    ├── sequence_info.csv - Codebook for sequences (identified by file output name of dcm2niix  
+    │       conversion, '3Dmprage' to 'T1w', please read the BIDS specification)
+    ├── session_info.csv - Codebook for session (identified by input folder name 'Baseline',    
+    │       'FollowUp', map your output (eg. 0 and 1)
+    └── study_info.csv - Codebook for general study information, regex for subjects             
+    ([:digit:]{5} in our case), patterns to remove ('_your_study|_yr_stdy|_my_Study') and       
+    group id regex ([:digit:]{1}(<=?[:digit:]{4}))
+```
 
 
 The next update is coming! We implemented a Dashboard, which shows information about the whole study, acquired data, detail information on sequences, header information and plausility checks (id, gender, scanner sequence settings, duplicate sequences.
