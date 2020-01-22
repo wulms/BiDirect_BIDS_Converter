@@ -8,16 +8,7 @@ Here you find the generalizable version for your own datasets (on Philips tested
 
 # General workflow
 
-```mermaid
-stateDiagram
-[*] --> Still
-Still --> [*]
-Still --> Moving
-Moving --> Still
-Moving --> Crash
-Crash --> [*]
 
-```
 
 
 
