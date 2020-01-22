@@ -6,6 +6,21 @@ Here you find the generalizable version for your own datasets (on Philips tested
 
 [![DOI](https://zenodo.org/badge/195199025.svg)](https://zenodo.org/badge/latestdoi/195199025)
 
+# General workflow
+
+```mermaid
+stateDiagram
+[*] --> Still
+Still --> [*]
+Still --> Moving
+Moving --> Still
+Moving --> Crash
+Crash --> [*]
+
+```
+
+
+
 # General folder structure (will be created - you only need the DICOM Folder!)
 
 
