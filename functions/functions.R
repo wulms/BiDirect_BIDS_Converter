@@ -1,11 +1,12 @@
 # functions file
 
 ## load libraries
+print("Loading environment and libraries.")
 source("functions/environment.R")
 source("functions/libraries.R")
 
 ## general functions
-
+print("Loading functions")
 source("functions/general.R")
 
 ## dcm2niix 
