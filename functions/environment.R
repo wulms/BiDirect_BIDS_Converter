@@ -22,7 +22,7 @@ directories <- list(
   # "bids_export" = "bids/export/sourcedata",
   # "bids_anonymized" = "bids/anonymized",
   # "bids_templates" = "user_information/BIDS_templates",
-  "metadata" = "metadata",
+  "metadata" = "metadata",json
   # User interaction and information folders
   "user_diagnostics" = "user/diagnostics",
   "user_settings" = "user/settings",
@@ -39,12 +39,12 @@ files <- list(
   "example_lut_study_info" = paste0(directories$user_settings, "/example_lut_study_info.csv"),
   "example_lut_session"= paste0(directories$user_settings, "/example_lut_session.csv"),
   "lut_sessions" = paste0(directories$user_settings, "/lut_sessions.csv"),
-  "lut_subjects" = paste0(directories$user_settings, "/lut_sessions.csv"),
+  "lut_sequences" = paste0(directories$user_settings, "/lut_sequences.csv"),
   "lut_study_info" = paste0(directories$user_settings, "/lut_study_info.csv"),
   # Extracted json metadata
   "metadata" = paste0(directories$metadata, "/json_metadata.csv"),
   # Diagnostic debugging output
-  "diagnostic_dcm2niix_paths" = paste0(directories$user_diagnostics, "/step1_dcm2nii_temp_paths.html"),
+  "diagnostic_dcm2niix_paths" = paste0(directories$user_diagnostics, "/step1_dcm2nii_paths.html"),
   "diagnostic_nii2BIDS_paths" = paste0(directories$user_diagnostics, "/step2_nii_2_BIDS_paths.html"),
   # Dashboards for internal and external use
   "dashboard_internal_use" = paste0(directories$dashboards, "/dashboard_internal_use.html"),
