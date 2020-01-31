@@ -251,6 +251,7 @@ mapping_dicoms <- function(dicom_folder) {
             variables_environment$files$diagnostic$dcm2niix_paths
           ))
           print.data.frame(diagnostics$dcm2nii_paths)
+          dir.create(variables_environment$directories$needed$user_diagnostics)
           write_csv(
             diagnostics$dcm2nii_paths,
             variables_environment$files$diagnostic$dcm2niix_paths
@@ -334,6 +335,197 @@ dcm2nii_converter <- function(list, output_folder){
 
 
 
-# json2bids mapping -------------------------------------------------------
+# json extraction mapping -------------------------------------------------------
+index_jsons <- function(path) {
+  print("Indexing JSON files")
+  start <- start_time()
+  json <- list.files(
+    path = paste0(path),
+    pattern = ".json",
+    full.names = FALSE,
+    recursive = TRUE,
+    include.dirs = TRUE
+  ) 
+  measure_time(1, 1, start)
+  return(json)
+}
+
+get_json_headers <- function(json, working_dir) {
+  setwd(working_dir)
+  start <- start_time()
+  
+  mri_properties <- vector()
+  str(mri_properties)
+  for (i in 1:length(json)) {
+    list_items(i, json, "Extraction of Headers - appending to one structure")
+    measure_time(i, json, start)
+    # Reading json headers
+    mri_properties_new <- names(rjson::fromJSON(file = json[i]))
+    mri_properties <- union(mri_properties, mri_properties_new)
+  }
+  # Building df
+  names = mri_properties %>% sort()
+  empty_df <- data.frame()
+  for (k in names)
+    empty_df[[k]] <- as.character()
+  print("Success!")
+  return(empty_df)
+}
+
+read_json_headers <- function(json, empty_df) {
+  #setwd(working_dir)
+  if (file.exists("../json_files.tsv") == 1) {
+    file.remove("../json_files.tsv")
+    print("../json_files.csv removed!")
+  }
+  
+  start <- start_time()
+  for (i in 1:length(json)) {
+    list_items(i, json, "Reading metadata into structure")
+    measure_time(i, json, start)
+    result_new <- rjson::fromJSON(file = json[i], simplify = TRUE) %>% 
+      lapply(paste, collapse = ", ") %>% 
+      bind_rows() %>%
+      mutate(Path = json[i])
+    result_new <- merge(empty_df, result_new, all = TRUE, sort = F)
+    result_new <- result_new[sort(names(result_new))]
+    
+    # result_new_1 <-
+    #   result_new[, order(colnames(empty_df), decreasing = TRUE)]
+    
+    if (file.exists("../json_files.tsv") == 0) {
+      write.table(
+        result_new,
+        "../json_files.tsv",
+        sep = "\t",
+        dec = ".",
+        qmethod = "double",
+        row.names = FALSE
+      )
+    } else {
+      # Here data gets only appended to csv
+      write.table(
+        result_new,
+        "../json_files.tsv",
+        sep = "\t",
+        dec = ".",
+        qmethod = "double",
+        row.names = FALSE,
+        append = TRUE,
+        col.names = FALSE
+      )
+    }
+  }
+  print("Done!")
+}
+
+extract_metadata <- function(df, number) {
+  df %>% filter(level == number) %>% select_if(~!all(is.na(.)))
+}
+
+extract_json_metadata <- function(json_dir) {
+  setwd(variables_environment$directories$setup$working_dir)
+  json_files <- tibble(files = index_jsons(json_dir)) 
+  metadata_empty_df <- get_json_headers(json_files$files, json_dir)
+  metadata_df <- read_json_headers(json_files$files, metadata_empty_df)
+  
+}
+
+read_metadata <- function() {
+  metadata_df <- readr::read_tsv("../json_files.tsv") %>% 
+    mutate(level = str_count(Path, "/"),
+           input_json = paste0(variables_environment$directories$needed$nii, "/", Path)) %>% 
+    separate(Path, into = c("session", "subject", "filename"), sep = "/") %>%
+    mutate(sequence = str_remove_all(filename, ".json")) 
+  return(metadata_df)
+}
+
+
+# sequence extraction and comparison --------------------------------------
+
+extract_sequences <- function(df){
+  sequences <- df %>%
+    select(sequence, ProtocolName, SeriesDescription) %>% unique() 
+  return(sequences)
+}
+
+mutate_sequence <- function(df){
+  df <- df %>%
+    mutate(BIDS_sequence_ID = "bids_sequence",
+           type = "anat/dwi/func",
+           relevant = "0/1")
+  return(df)
+}
+
+check_sequence_plausibility <- function(df){
+  if(any(is.na(df$BIDS_sequence_ID)) | any(str_detect(df$BIDS_sequence_ID, "bids_sequence"))) {
+    stop("Planned error: empty or unedited 'BIDS_sequence_ID' column. Please edit 'BIDS_sequence_ID' in lut_sequences.csv")
+  } else if (any(is.na(df$type)) | any(str_detect(df$type, "anat/dwi/func"))) {
+    stop("Error: empty or unedited 'type' column. Please edit 'type' in lut_sequences.csv")
+  } else if (any(is.na(df$relevant)) | any(str_detect(df$type, "0/1"))){
+    stop("Error: empty or unedited 'relevant' column. Please edit 'relevant' in lut_sequences.csv")
+  } else {
+    print("Plausibility check passed.")
+  }
+}
+
+synchronise_lut_sequence <- function(filename){
+  setwd(variables_environment$directories$setup$working_dir)
+  sequences <- extract_sequences(diagnostics$json_data)
+  if(file.exists(filename) == 0){
+    print("File lut_sequences.csv does not exist. Creates file.")
+    sequences_df <- mutate_sequence(sequences)
+    print.data.frame(sequences_df)
+    write_csv(sequences_df,
+              filename)
+  } else {
+    print("File exists - update possible")
+    sequences_old <<- read_csv(filename) %>% select(sequence, ProtocolName, SeriesDescription)
+    sequences_df <- anti_join(sequences, sequences_old) 
+    print(sequences)
+    print(sequences_old)
+    print.data.frame(sequences_df)
+    if(nrow(sequences_df) > 0){
+      sequences_df <- sequences_df %>% mutate_sequence()
+      write_csv(sequences_df,
+                filename,
+                append = TRUE)
+      stop("lut_sequences.csv was updated. Please edit the BIDS_sequence_ID, type and relevant column and restart the script.")
+    } else if(nrow(sequences_df) == 0){
+      print("No new sequences identified. Loading the lut_sequences.csv")
+      sequences_df <- read_csv(filename)
+      check_sequence_plausibility(sequences_df)
+      sequences_df <- sequences_df %>% select(sequence, BIDS_sequence_ID, type, relevant) %>% distinct()
+      return(sequences_df)
+    }
+  }
+}
+
+apply_lut_sequence <- function(df){
+  df <- df %>% mutate(
+    sequence_BIDS = stri_replace_all_regex(
+      sequence,
+      paste0("^",variables_user$LUT$sequences$sequence, "$"),
+      variables_user$LUT$sequences$BIDS_sequence_ID,
+      vectorize_all = FALSE
+    ),
+    BIDS_json = paste0(
+      variables_environment$directories$needed$bids,
+      "/", subject,
+      "/", session,
+      "/", subject,
+      "_", session,
+      "_", sequence_BIDS, ".json"
+  ))
+  df_diagnostic_sequence_mapping <- df %>% select(subject, session, sequence, BIDS_json, input_json) 
+  print.data.frame(df_diagnostic_sequence_mapping)
+  write_csv(df_diagnostic_sequence_mapping, variables_environment$files$diagnostic$nii2BIDS_paths)
+  print("Sequence mapping was successful. Saved output to 'user/diagnostic/step2_nii_2_BIDS_paths.csv'. Please look for implausible sequences")
+  return(df)
+}
+
+
+
+
 
 

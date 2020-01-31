@@ -49,6 +49,24 @@ dcm2nii_converter(
 
 # json path indexing and extraction ---------------------------------------
 
+extract_json_metadata(variables_environment$directories$needed$json_sensitive)
+diagnostics$json_data <- read_metadata()
+
+
+# sequence extraction  ----------------------------------------------------
+variables_user$LUT$sequences <- synchronise_lut_sequence(variables_environment$files$lut$lut_sequences)
+
+# BIDS path creation
+diagnostics$json_data <- apply_lut_sequence(diagnostics$json_data)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -317,3 +335,10 @@ diag_duplicate_paths <- json_metadata %>%
 ## Export2Cooperate - check for other .txt file than "export_template.txt"
 
 setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter//")
+
+
+
+
+
+
+

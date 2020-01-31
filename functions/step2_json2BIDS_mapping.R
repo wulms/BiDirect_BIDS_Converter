@@ -1,15 +1,15 @@
-index_jsons <- function(path) {
-  
-  tic()
-  json <- list.files(path = paste0(path),
-                     pattern = ".json",
-                     full.names = TRUE,
-                     recursive=TRUE,
-                     include.dirs = TRUE) %>%
-    str_replace(working_dir, "")
-  toc()
-  return(json)
-}
+# index_jsons <- function(path) {
+#   
+#   tic()
+#   json <- list.files(path = paste0(path),
+#                      pattern = ".json",
+#                      full.names = TRUE,
+#                      recursive=TRUE,
+#                      include.dirs = TRUE) %>%
+#     str_replace(working_dir, "")
+#   toc()
+#   return(json)
+# }
 
 difference_check_jsons <- function(json, json_csv) {
   if (file.exists(json_csv) == 1) {

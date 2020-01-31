@@ -93,11 +93,11 @@ variables_environment$files = list(
   # Diagnostic debugging output
   "dcm2niix_paths" = paste0(
     variables_environment$directories$needed$user_diagnostics,
-    "/step1_dcm2nii_paths.html"
+    "/step1_dcm2nii_paths.csv"
   ),
   "nii2BIDS_paths" = paste0(
     variables_environment$directories$needed$user_diagnostics,
-    "/step2_nii_2_BIDS_paths.html"
+    "/step2_nii_2_BIDS_paths.csv"
   ),
   "metadata" = paste0(
     variables_environment$directories$needed$user_diagnostics,
