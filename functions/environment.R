@@ -9,7 +9,7 @@ print("Setup of variables: ")
 variables_environment <- list(
   directories = list(
     setup = list("working_dir" = "/home/niklas/BIDS_test/",
-                 "dcm2niix_path" = "/home/niklas/Downloads/"),
+                 "dcm2niix_path" = "/home/niklas/Programme/MRIcron_linux/mricron/dcm2niix"),
     needed = list(
       # input folder
       "dicom" = "dicom",

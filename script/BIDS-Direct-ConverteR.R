@@ -22,6 +22,41 @@ create_templates()
 mapping_dicoms(variables_environment$directories$needed$dicom)
 
 
+
+# dcm2niix conversion -----------------------------------------------------
+
+
+diagnostics$dcm2nii_conversion_paths = dcm2nii_wrapper(
+  input = diagnostics$dcm2nii_paths$dicom_folder,
+  output = diagnostics$dcm2nii_paths$nii_temp,
+  scanner_type = variables_user$LUT$study_info$scanner_manufacturer
+)
+
+dcm2nii_converter(diagnostics$dcm2nii_conversion_paths$nii,
+                  diagnostics$dcm2nii_paths$nii_temp)
+
+# json with sensitive information
+dcm2nii_converter(
+  diagnostics$dcm2nii_conversion_paths$json,
+  str_replace(
+    diagnostics$dcm2nii_paths$nii_temp,
+    variables_environment$directories$needed$nii,
+    variables_environment$directories$needed$json_sensitive
+  )
+)
+
+
+
+# json path indexing and extraction ---------------------------------------
+
+
+
+
+
+# old ---------------------------------------------------------------------
+
+
+
 ## Create and update 'session_info.csv' with new session foldernames
 if (file.exists("user_settings/session_info.csv")) {
   print("File 'session_info.csv' exists. Reading file.")

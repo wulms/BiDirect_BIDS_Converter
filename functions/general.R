@@ -4,13 +4,36 @@ path_to_folder <- function(list_of_files){
   
 }
 
-find_already_existing <- function(df_with_existing, df_with_found_files){
-  # Takes an existing dataframe and looks for all files, that are not a part of it  
-  
-  
-  # Takes the "find_already_existing" output and applies a filter to the df_with_existing 
-  
-  # Output: df filtered for the variables, that do not already exist.
+# Time measurement --------------------------------------------------------
+list_items <- function(i, list, string) {
+  cat("\014")
+  print(string)
+  print(paste(
+    i,
+    " / ",
+    length(list),
+    " total. (",
+    round(i / length(list) * 100, 1),
+    "%)"))
+  print(paste(
+    "list item:",
+    list[i]
+  ))
+}
+
+start_time <- function() {
+  Sys.time()
+}
+measure_time <- function(i, list, start) {
+  end <- Sys.time()
+  time_difference <- difftime(end, start, unit = "mins") %>% round(2)
+  print(paste(
+    "Time since start: ",
+    time_difference,
+    " min.  ETA: ",
+    (difftime(end, start, unit = "mins")/i*length(list) - time_difference) %>% round(2),
+    " min. remaining."
+  ))
 }
 
 
@@ -178,9 +201,9 @@ mapping_dicoms <- function(dicom_folder) {
         ),
         nii_temp = paste0(
           output,
-          "/",
+          "/ses-",
           session_BIDS,
-          "/",
+          "/sub-",
           subjects_BIDS
         )
       )
@@ -191,44 +214,126 @@ mapping_dicoms <- function(dicom_folder) {
     # 
     return(df)
   }
-  
   print(dicoms_mapping)
   print("Subject-id detection, cleaning and plausibility check")
   Sys.sleep(2)
-  diagnostics <<- list(dcm2nii_paths = clean_foldernames(df = dicoms_mapping))
-  
-  
-  
-  # Checking for implausible sucject names
-  
-  check_subject_nomenclature <- function(subjects_BIDS, subject_regex) {
-    if (any(str_detect(subjects_BIDS, subject_regex, negate = TRUE))) {
-      diagnostics$dcm2nii_paths %>% 
-        filter(str_detect(subjects_BIDS, variables_user$LUT$study_info$subject_id_regex) == 0) %>%
-        print.data.frame()
-      write_csv(diagnostics$dcm2nii_paths,
-                variables_environment$files$diagnostic$dcm2niix_paths)
-      print(paste("Implausible subjects_BIDS found - look into file: ", variables_environment$files$diagnostic$dcm2niix_paths))
-      stop("Code breaks here: Implausible subjects_BIDS id found - please edit lut_study_info to edit your regex and the patterns to remove. Then start again.")
-    } else {
-      print(paste("Filename cleaning done, subjects_BIDS pattern recognized. Diagnostic output: ", variables_environment$files$diagnostic$dcm2niix_paths)
-      print.data.frame(diagnostics$dcm2nii_paths)
-      write_csv(diagnostics$dcm2nii_paths,
-                variables_environment$files$diagnostic$dcm2niix_paths)
-      Sys.sleep(2)
+  diagnostics <<-
+    list(dcm2nii_paths = clean_foldernames(df = dicoms_mapping))
+    # Checking for implausible subject names
+    check_subject_nomenclature <-
+    function(subjects_BIDS, subject_regex) {
+      if (any(str_detect(subjects_BIDS, subject_regex, negate = TRUE))) {
+        diagnostics$dcm2nii_paths %>%
+          filter(
+            str_detect(
+              subjects_BIDS,
+              variables_user$LUT$study_info$subject_id_regex
+            ) == 0
+          ) %>%
+          print.data.frame()
+        write_csv(
+          diagnostics$dcm2nii_paths,
+          variables_environment$files$diagnostic$dcm2niix_paths
+        )
+        print(
+          paste(
+            "Implausible subjects_BIDS found - look into file: ",
+            variables_environment$files$diagnostic$dcm2niix_paths
+          )
+        )
+        stop(
+          "Code breaks here: Implausible subjects_BIDS id found - please edit lut_study_info to edit your regex and the patterns to remove. Then start again."
+        )
+      } else {
+        print(
+          paste(
+            "Filename cleaning done, subjects_BIDS pattern recognized. Diagnostic output: ",
+            variables_environment$files$diagnostic$dcm2niix_paths
+          ))
+          print.data.frame(diagnostics$dcm2nii_paths)
+          write_csv(
+            diagnostics$dcm2nii_paths,
+            variables_environment$files$diagnostic$dcm2niix_paths
+          )
+          Sys.sleep(2)
+      }
     }
-  }
-    
-  check_subject_nomenclature(subjects_BIDS = diagnostics$dcm2nii_paths$subjects_BIDS,
-                             subject_regex = variables_user$LUT$study_info$subject_id_regex)  
   
-  
-  
+  check_subject_nomenclature(
+    subjects_BIDS = diagnostics$dcm2nii_paths$subjects_BIDS,
+    subject_regex = variables_user$LUT$study_info$subject_id_regex
+  )
+print("=============================================================")
+print("Congratulations: The dcm2bids-preparation was successfull!")
 }
 
 
 
 # dcm2niix conversion functions -------------------------------------------
 
+dcm2nii_wrapper <-
+  function(input,
+           output,
+           scanner_type,
+           dcm2niix_path = variables_environment$directories$setup$dcm2niix_path) {
+    if (scanner_type == "Philips") {
+      commands <- tibble(
+        nii = paste0(dcm2niix_path,
+                     " -o ",
+                     output,
+                     " -ba y -f %d -z y ",
+                     input),
+        json = paste0(
+          dcm2niix_path,
+          " -o ",
+          str_replace(
+            output,
+            variables_environment$directories$needed$nii,
+            variables_environment$directories$needed$json_sensitive
+          ),
+          " -b o -ba n -f %d -t y -z y ",
+          input
+        )
+      )
+    } else if (scanner_type == "Siemens") {
+      stop("Not supported")
+    } else if (scanner_type == "GE") {
+      stop("Not supported")
+    } else {
+      stop(
+        "Wrong scanner type: choose between 'Philips', 'Siemens', 'GE' (only tested on Philips)!"
+      )
+    }
+    return(commands)
+  }
+
+
 ## dicom converter
+
+dcm2nii_converter <- function(list, output_folder){
+  start_timer <- start_time()
+  for (i in seq_along(list)) {
+    list_items(i, list, string = "dcm2niix conversion: output nii.gz + json.header (removing sensitive information like birthdate, gender, weight, id")
+    done_file <- paste0(output_folder[i], "/done.txt")
+    dir.create(output_folder[i],
+               recursive = TRUE,
+               showWarnings = FALSE)
+    measure_time(i, list, start_timer)
+    if (file.exists(done_file) == 0) {
+      system(list[i])
+      write_file("done", done_file)
+    } else if (file.exists(done_file) == 1) {
+      print("Skipped: Subject already processed - folder contains done.txt")
+    }
+  }
+  measure_time(i, list, start_timer)
+  print("===================================")
+  print("Congratulation - the conversion was successful.")
+  Sys.sleep(3)
+}
+
+
+
+# json2bids mapping -------------------------------------------------------
+
 
