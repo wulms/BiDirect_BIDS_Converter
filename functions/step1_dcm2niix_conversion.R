@@ -1,44 +1,31 @@
 # dcm2niix functions
 
-## dicom converter
-list_dicom_folders <- function(input_folder) {
-  df <- dir(input_folder, full.names = TRUE) %>%
-    lapply(FUN = dir,
-           recursive = FALSE,
-           full.names = TRUE) %>%
-    unlist() %>%
-    data.frame(dicom_folder = ., stringsAsFactors = FALSE)  %>%
-    mutate(
-      your_session_id = str_split(dicom_folder, "/", simplify = TRUE)[, 2],
-      your_subject_id = str_split(dicom_folder, "/", simplify = TRUE)[, 3]
-    )
-  return(df)
-}
 
-clean_foldernames <- function(pattern_remove) {
-  dicoms_mapping %>%
-    mutate(
-      subjects_BIDS = your_subject_id %>% 
-        str_remove_all("[:punct:]{1}|[:blank:]{1}") %>%
-        str_remove_all(regex("plus", ignore_case = TRUE)) %>%
-        str_remove_all(regex(pattern_remove, ignore_case = TRUE)) %>%
-        str_remove("10738BiDirecteigentlich"),
-      group_BIDS = str_extract(subjects_BIDS, user_study_info$group_id_regex),
-      session_BIDS = stri_replace_all_regex(
-        your_session_id,
-        user_session_info$your_session_id,
-        user_session_info$session_BIDS,
-        vectorize_all = FALSE
-      ),
-      nii_temp = paste0(
-        directories$NII_temp_dir,
-        "/",
-        session_BIDS,
-        "/",
-        subjects_BIDS
-      )
-    )
-}
+
+# clean_foldernames <- function(pattern_remove) {
+#   dicoms_mapping %>%
+#     mutate(
+#       subjects_BIDS = your_subject_id %>% 
+#         str_remove_all("[:punct:]{1}|[:blank:]{1}") %>%
+#         str_remove_all(regex("plus", ignore_case = TRUE)) %>%
+#         str_remove_all(regex(pattern_remove, ignore_case = TRUE)) %>%
+#         str_remove("10738BiDirecteigentlich"),
+#       group_BIDS = str_extract(subjects_BIDS, user_study_info$group_id_regex),
+#       session_BIDS = stri_replace_all_regex(
+#         your_session_id,
+#         user_session_info$your_session_id,
+#         user_session_info$session_BIDS,
+#         vectorize_all = FALSE
+#       ),
+#       nii_temp = paste0(
+#         directories$NII_temp_dir,
+#         "/",
+#         session_BIDS,
+#         "/",
+#         subjects_BIDS
+#       )
+#     )
+# }
 
 # diag_mapping <- function(df) {
 #   df %>%

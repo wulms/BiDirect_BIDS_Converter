@@ -2,8 +2,10 @@
 
 ## load libraries
 print("Loading environment and libraries.")
-source("functions/environment.R")
+
 source("functions/libraries.R")
+source("functions/environment.R")
+
 
 ## general functions
 print("Loading functions")
