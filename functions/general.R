@@ -83,8 +83,8 @@ create_templates <- function () {
       study_info = read_csv(variables_environment$files$lut$lut_study_info)
     ))
     print(variables_user$LUT$study_info)
-    print("Please wait 10 seconds and take care, that these options are right")
-    Sys.sleep(10)
+    print("Please wait 4 seconds and take care, that these options are right")
+    Sys.sleep(4)
     print("Next step: list dicom folders, and extract session information")
     # return(variables_user)
   }
@@ -251,7 +251,9 @@ mapping_dicoms <- function(dicom_folder) {
             variables_environment$files$diagnostic$dcm2niix_paths
           ))
           print.data.frame(diagnostics$dcm2nii_paths)
-          dir.create(variables_environment$directories$needed$user_diagnostics)
+          dir.create(variables_environment$directories$needed$user_diagnostics, 
+                     showWarnings = FALSE, 
+                     recursive = TRUE)
           write_csv(
             diagnostics$dcm2nii_paths,
             variables_environment$files$diagnostic$dcm2niix_paths
