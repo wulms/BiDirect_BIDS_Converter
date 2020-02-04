@@ -512,6 +512,7 @@ synchronise_lut_sequence <- function(filename){
 
 apply_lut_sequence <- function(df){
   df <- df %>% mutate(
+    group_BIDS = str_extract(subject, regex(variables_user$LUT$study_info$group_id_regex)),
     sequence_BIDS = stri_replace_all_regex(
       sequence,
       paste0("^",variables_user$LUT$sequences$sequence, "$"),
@@ -529,6 +530,13 @@ apply_lut_sequence <- function(df){
   df_diagnostic_sequence_mapping <- df %>% select(subject, session, sequence, BIDS_json, input_json) 
   print.data.frame(df_diagnostic_sequence_mapping)
   write_csv(df_diagnostic_sequence_mapping, variables_environment$files$diagnostic$nii2BIDS_paths)
+  # Output of sensitive informaion df
+  df_sensitive_info <- df %>% select(subject, session, group_BIDS, PatientID, PatientName, AcquisitionDateTime, PatientBirthDate, PatientSex, PatientWeight) %>%
+    mutate(AcquisitionDateTime = as.Date(AcquisitionDateTime),
+           Age = time_length(difftime(AcquisitionDateTime, PatientBirthDate), "years") %>% round(digits = 2)) %>%
+    unique()
+  print.data.frame(df_sensitive_info)
+  write_csv(df_sensitive_info, "user/diagnostics/sensitive_subject_information.csv")
   print("Sequence mapping was successful. Saved output to 'user/diagnostic/step2_nii_2_BIDS_paths.csv'. Please look for implausible sequences")
   return(df)
 }

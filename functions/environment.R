@@ -39,7 +39,7 @@ variables_environment <- list(
       # only Philips support (Siemens/GE later)
       "subject_id_regex" = "^[:digit:]{5}$",
       "group_id_regex" = "[:digit:]{1}(?=[:digit:]{4})",
-      "remove_pattern_regex" = "([:punct:]{1}|[:blank:]{1}|(b|d)i(d|b)i|bid|bd|bdi)(ect|rect)($|(rs|T2TSE|inclDIRSequenz|neu|abbruch))"
+      "remove_pattern_regex" = "[:punct:]{1}|[:blank:]{1}|((b|d)i(d|b)i|bid|bd|bdi)(ect|rect)($|(rs|T2TSE|inclDIRSequenz|neu|abbruch))"
     ),
     session_variables = tibble(
       session_id = c("Baseline", "FollowUp", "FollowUp2", "FollowUp3"),
