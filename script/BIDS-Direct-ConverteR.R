@@ -10,8 +10,8 @@ Sys.sleep(3)
 source("functions/functions.R")
 
 ## settings
-# variables_environment$directories$setup$working_dir <- "/home/niklas/BIDS_test/"
-# variables_environment$directories$setup$dcm2niix_path <- "/home/niklas/Programme/MRIcron_linux/mricron/dcm2niix"
+ variables_environment$directories$setup$working_dir <- file.path("/home/niklas/BIDS_test/")
+ variables_environment$directories$setup$dcm2niix_path <- paste0(variables_environment$directories$setup$working_dir, "/dcm2niix")
 
 ## dcm2niix download
 

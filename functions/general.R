@@ -188,7 +188,6 @@ mapping_dicoms <- function(dicom_folder) {
     df <- df %>%
       mutate(
         subjects_BIDS = your_subject_id %>%
-          str_remove_all("[:punct:]{1}|[:blank:]{1}") %>%
           str_remove_all(regex("plus", ignore_case = TRUE)) %>%
           str_remove_all(regex(pattern_remove, ignore_case = TRUE)) %>%
           str_remove("10738BiDirecteigentlich"),# for BiDirect!
@@ -257,6 +256,14 @@ mapping_dicoms <- function(dicom_folder) {
           write_csv(
             diagnostics$dcm2nii_paths,
             variables_environment$files$diagnostic$dcm2niix_paths
+          )
+          write_csv2(
+            diagnostics$dcm2nii_paths,
+            "user/diagnostics/step1_dcm2nii_paths_csv2.csv"
+          )
+          write_tsv(
+            diagnostics$dcm2nii_paths,
+            "user/diagnostics/step1_dcm2nii_paths.tsv"
           )
           Sys.sleep(2)
       }

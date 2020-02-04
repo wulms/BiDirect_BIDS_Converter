@@ -9,7 +9,7 @@ print("Setup of variables: ")
 variables_environment <- list(
   directories = list(
     setup = list("working_dir" = "/home/niklas/BIDS_test/",
-                 "dcm2niix_path" = "/home/niklas/Programme/MRIcron_linux/mricron/dcm2niix"),
+                 "dcm2niix_path" = paste0(getwd(), "/dcm2niix")),
     needed = list(
       # input folder
       "dicom" = "dicom",
@@ -39,7 +39,7 @@ variables_environment <- list(
       # only Philips support (Siemens/GE later)
       "subject_id_regex" = "^[:digit:]{5}$",
       "group_id_regex" = "[:digit:]{1}(?=[:digit:]{4})",
-      "remove_pattern_regex" = "((b|d)i(d|b)i|bid|bd|bdi)(ect|rect)($|(rs|T2TSE|inclDIRSequenz|neu|abbruch))"
+      "remove_pattern_regex" = "([:punct:]{1}|[:blank:]{1}|(b|d)i(d|b)i|bid|bd|bdi)(ect|rect)($|(rs|T2TSE|inclDIRSequenz|neu|abbruch))"
     ),
     session_variables = tibble(
       session_id = c("Baseline", "FollowUp", "FollowUp2", "FollowUp3"),
@@ -49,6 +49,7 @@ variables_environment <- list(
                    "sequence" = "Example: BIDS Sequence name: T1w, acq-highres_T1w, T2w, T2star, FLAIR, dwi, task-taskstring_bold, task-rest_acq-short_bold, task-rest_acq-long_bold")
   )
 )
+
 
 
 variables_environment$files = list(
