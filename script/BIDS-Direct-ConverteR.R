@@ -1,24 +1,33 @@
 # BIDS-Direct-ConverteR
 
-setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter//")
+setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
 
 print("Welcome to the BIDS-Direct-ConverteR")
 Sys.sleep(3)
+
+
 ## general setup
 source("functions/functions.R")
 
+## settings
+# variables_environment$directories$setup$working_dir <- "/home/niklas/BIDS_test/"
+# variables_environment$directories$setup$dcm2niix_path <- "/home/niklas/Programme/MRIcron_linux/mricron/dcm2niix"
 
-## Create directories for outputs
-# lapply(directories,
-#        dir.create,
-#        recursive = TRUE,
-#        showWarnings = FALSE)
+## dcm2niix download
+
+# Win 
+# https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20190902/dcm2niix_lnx.zip
+
+# Linux
+# https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20190902/dcm2niix_lnx.zip
+
+# Mac 
+# https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20190902/dcm2niix_mac.zip
 
 # Create templates
-
 create_templates()
 
-## Stop 1: indexig input folders - abort function - user edit needed
+## Stop 1: indexig input folders (dicom) - abort function - user edit needed
 mapping_dicoms(variables_environment$directories$needed$dicom)
 
 

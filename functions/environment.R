@@ -38,7 +38,7 @@ variables_environment <- list(
       "scanner_manufacturer" = "Philips",
       # only Philips support (Siemens/GE later)
       "subject_id_regex" = "^[:digit:]{5}$",
-      "group_id_regex" = "[digit:]{1}(<=?[:digit:]{4}",
+      "group_id_regex" = "[:digit:]{1}(?=[:digit:]{4})",
       "remove_pattern_regex" = "((b|d)i(d|b)i|bid|bd|bdi)(ect|rect)($|(rs|T2TSE|inclDIRSequenz|neu|abbruch))"
     ),
     session_variables = tibble(
