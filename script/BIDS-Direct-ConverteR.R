@@ -9,20 +9,12 @@ Sys.sleep(3)
 ## general setup
 source("functions/functions.R")
 
+# pre-installation step
+install_dcm2niix()
+
 ## settings
- variables_environment$directories$setup$working_dir <- file.path("/home/niklas/BIDS_test/")
+variables_environment$directories$setup$working_dir <- file.path("/home/niklas/BIDS_test/")
  
-## dcm2niix download
-
-# Win 
-# https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20190902/dcm2niix_lnx.zip
-
-# Linux
-# https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20190902/dcm2niix_lnx.zip
-
-# Mac 
-# https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20190902/dcm2niix_mac.zip
-
 # Create templates
 create_templates()
 

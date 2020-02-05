@@ -1,7 +1,8 @@
 # install dcm2niix 
 
-install_dcm2niix <- function(os) {
+install_dcm2niix <- function() {
   if (file.exists("dcm2niix") == 0) {
+    os <- Sys.info()["sysname"]
     if (os == "Darwin") {
       message("Identified MacOs. Not officially supported!")
       dcm2niix <-
@@ -26,4 +27,4 @@ install_dcm2niix <- function(os) {
   }
 }
 
-install_dcm2niix(Sys.info()["sysname"])
+install_dcm2niix()
