@@ -2,7 +2,7 @@
 #setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
 
 
-
+args = "/home/niklas/BIDS_test/"
 
 ## general setup
 source("functions/functions.R")
@@ -60,6 +60,10 @@ variables_user$LUT$sequences <- synchronise_lut_sequence(variables_environment$f
 render_asci_art("asci/sequence2BIDS.txt")
 diagnostics$json_data <- apply_lut_sequence(diagnostics$json_data)
 
+
+# copy to BIDS
+render_asci_art("asci/copy2BIDS.txt")
+copy2BIDS(variables_environment$files$diagnostic$nii2BIDS_paths)
 
 
 

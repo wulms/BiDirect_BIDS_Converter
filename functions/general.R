@@ -3,8 +3,22 @@
 options(readr.num_columns = 0)
 options(width = 320)
 
-path_to_folder <- function(list_of_files){
-  
+#' Create folders from (list of) filenames
+#'
+#' @param list_of_files filename or list of files
+#'
+#' @return Nothing - creates the files on the system
+#' @export
+#'
+#' @examples
+path_to_folder <- function(list_of_files) {
+  paths_folder <- sub("[/][^/]+$", "", list_of_files)
+  paths_folder <- unique(paths_folder)
+  print(head(paths_folder))
+  lapply(paths_folder,
+         dir.create,
+         recursive = TRUE,
+         showWarnings = FALSE)
 }
 
 render_asci_art <- function(asci_file){
@@ -93,7 +107,6 @@ create_templates <- function () {
     ))
     print(variables_user$LUT$study_info)
     print("Please wait 4 seconds and take care, that these options are right")
-    Sys.sleep(4)
     print("Next step: list dicom folders, and extract session information")
     # return(variables_user)
   }
@@ -530,7 +543,9 @@ synchronise_lut_sequence <- function(filename){
 
 apply_lut_sequence <- function(df){
   print.data.frame(variables_user$LUT$sequences)
-  df <- df %>% mutate(
+  df <- df %>% 
+    left_join(variables_user$LUT$sequences) %>% 
+    mutate(
     group_BIDS = str_extract(subject, regex(variables_user$LUT$study_info$group_id_regex)),
     sequence_BIDS = stri_replace_all_regex(
       sequence,
@@ -542,11 +557,12 @@ apply_lut_sequence <- function(df){
       variables_environment$directories$needed$bids,
       "/", subject,
       "/", session,
+      "/", type,
       "/", subject,
       "_", session,
       "_", sequence_BIDS, ".json"
-  ))
-  df_diagnostic_sequence_mapping <- df %>% select(subject, session, sequence, input_json, BIDS_json) 
+  )) 
+  df_diagnostic_sequence_mapping <- df %>% select(subject, session, sequence, type, input_json, BIDS_json, relevant) 
   print.data.frame(df_diagnostic_sequence_mapping, right = FALSE)
   write_csv(df_diagnostic_sequence_mapping, variables_environment$files$diagnostic$nii2BIDS_paths)
   # Output of sensitive informaion df
@@ -561,6 +577,45 @@ apply_lut_sequence <- function(df){
 }
 
 
+
+
+# copy2BIDS ---------------------------------------------------------------
+
+copy2BIDS <- function(csv_file){
+  csv_file <- read_csv(variables_environment$files$diagnostic$nii2BIDS_paths)
+  csv_file_relevant <- csv_file %>% filter(relevant == 1) %>%
+    mutate(input_nii = str_replace(input_json, ".json", ".nii.gz"),
+           BIDS_nii = str_replace(BIDS_json, ".json", ".nii.gz"))
+  csv_file_redundant <- csv_file %>% filter(relevant == 0)
+  cat("\n\n")
+  print("Relevant sequences files (copied2BIDS)")
+  cat("\n\n")
+  csv_file_relevant %>% select(sequence, relevant) %>% count(sequence) %>% print.data.frame()
+  cat("\n\n")
+  cat("\n\n")
+  print("Irrelevant sequences files (skipped)")
+  cat("\n\n")
+  csv_file_redundant  %>% select(sequence, relevant) %>% count(sequence) %>% print.data.frame()
+  cat("\n\n")
+  cat("\n\n")
+  
+  csv_file_relevant_non_dwi <- csv_file_relevant %>% filter(type != "dwi") 
+  csv_file_relevant_dwi <- csv_file_relevant %>% filter(type == "dwi") %>%
+    mutate(input_bval = str_replace(input_json, ".json", ".bval"),
+           input_bvec = str_replace(input_json, ".json", ".bvec"),
+           BIDS_bval = str_replace(BIDS_json, ".json", ".bval"),
+           BIDS_bvec = str_replace(BIDS_json, ".json", ".bvec")
+  )
+  path_to_folder(csv_file_relevant$BIDS_json)
+  # non dwi
+  file.copy(from = csv_file_relevant_non_dwi$input_json, to = csv_file_relevant_non_dwi$BIDS_json)
+  file.copy(from = csv_file_relevant_non_dwi$input_nii, to = csv_file_relevant_non_dwi$BIDS_nii)
+  # dwi
+  file.copy(from = csv_file_relevant_dwi$input_json, to = csv_file_relevant_dwi$BIDS_json)
+  file.copy(from = csv_file_relevant_dwi$input_nii, to = csv_file_relevant_dwi$BIDS_nii)
+  file.copy(from = csv_file_relevant_dwi$input_bval, to = csv_file_relevant_dwi$BIDS_bval)
+  file.copy(from = csv_file_relevant_dwi$input_bvec, to = csv_file_relevant_dwi$BIDS_bvec)
+}
 
 
 

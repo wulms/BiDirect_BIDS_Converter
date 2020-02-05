@@ -10,6 +10,7 @@ Here you find the generalizable version for your own datasets (on Philips tested
 
 # How-to-use:
 - requirement: R installed on your system (tested on Ubuntu 18.04 and Windows 10)
+  - Ubuntu [Installation](https://linuxize.com/post/how-to-install-r-on-ubuntu-18-04/)
 - data in folder structure: __study_root/dicom/session/subject/dicom_folders_and_data__
 
 ```bash
@@ -49,6 +50,11 @@ __Example of my data structure__
 - Follow the statements of the script
 - edit the files. Please use LibreOffice for native support. Microsoft Excel interprets input data already instead on relying on the csv structure. So it has some problems in parsing the csv into spreadsheets and depends on local language and delimiter settings. There are settings on your system, that would enable the support of Excel on your computer. [Click on the link](https://support.ecwid.com/hc/en-us/articles/207100869-Import-export-CSV-files-to-Excel)
   - user/settings/lut_study_info.csv - you need an exact match of the subject and group regex
+    - subject regex: "[:digit:]{5}" - translates to: 5 digits specify my subject id
+    - group regex: "[:digit:]{1}(?=[:digit:]{4})" - translates to: the first digit, before 4 digits come (in a total of 5 digits)
+    - pattern to remove simple: "_your_study|_your_stdy|_yr_study|_your_study|_my_Study" - translates to: remove each occurrence of a string (splitted by "|"")
+    - pattern to remove advanced: "_(your|yr|my)_(study|stdy|Study)"
+    - pattern to remove expert: "(?<=[:digit:]{5})*" - translates to: 
   - user/settings/lut_sessions.csv - name your sessions
   - user/settings/lut_sequences.csv - name your sequences to BIDS. Please look into the BIDS specifications for further information on valid filenames.
 
