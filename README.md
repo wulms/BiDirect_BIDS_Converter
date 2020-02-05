@@ -47,7 +47,7 @@ __Example of my data structure__
 > Rscript --vanilla /home/niklas/start_BIDS-ConverteR.R /home/niklas/BiDirect_study_data    
 
 - Follow the statements of the script
-- edit the files. Please use LibreOffice for native support. Microsoft Excel has some issues in parsing the csv into spreadsheets and depends on local language and delimiter settings.
+- edit the files. Please use LibreOffice for native support. Microsoft Excel interprets input data already instead on relying on the csv structure. So it has some problems in parsing the csv into spreadsheets and depends on local language and delimiter settings. There are settings on your system, that would enable the support of Excel on your computer. [Click on the link](https://support.ecwid.com/hc/en-us/articles/207100869-Import-export-CSV-files-to-Excel)
   - user/settings/lut_study_info.csv - you need an exact match of the subject and group regex
   - user/settings/lut_sessions.csv - name your sessions
   - user/settings/lut_sequences.csv - name your sequences to BIDS. Please look into the BIDS specifications for further information on valid filenames.
