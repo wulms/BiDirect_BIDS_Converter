@@ -9,6 +9,7 @@ print("Setup of variables: ")
 variables_environment <- list(
   directories = list(
     setup = list("working_dir" = args,
+                 "repo_dir" = getwd(),
                  "dcm2niix_path" = paste0(getwd(), "/dcm2niix")),
     needed = list(
       # input folder
@@ -116,4 +117,3 @@ variables_environment$files = list(
   ))
 )
 
-print(variables_environment)

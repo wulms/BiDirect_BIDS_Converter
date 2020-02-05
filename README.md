@@ -11,22 +11,46 @@ Here you find the generalizable version for your own datasets (on Philips tested
 # How-to-use:
 - requirement: R installed on your system (tested on Ubuntu 18.04 and Windows 10)
 - data in folder structure: __study_root/dicom/session/subject/dicom_folders_and_data__
+
+```bash
+study_name
+└── dicom
+    ├── Baseline
+    │   ├── 10002_your_study
+    │   ├── 10003_your_stdy
+    │   └── 10004_yr_study
+    └── FollowUp
+        ├── 10003_your_study
+        ├── 10004_my_Study
+        └── 10005_your_study
+```
+
 - download the testing branch version (merged soon)
 - unzip
 - start a terminal and enter
 - __Linux/Mac__  
 
-> Rscript --vanilla path_to_cloned_repository/start_BIDS_ConverteR.R path_to_your_dicom_data/study_root  
+> Rscript --vanilla path_to_cloned_repository/start_BIDS_ConverteR.R path_to_your_dicom_data/study_name  
 
-- __Windows__  
+- __Windows__ You need 2 backslashes here. Backslash is an escape character in R. It is also possible to use slash "/".
 
-> Rscript --vanilla C:\\path_to_cloned_repository\\start_BIDS_ConverteR.R C:\\path_to_your_dicom_data\\study_root  
+> Rscript --vanilla C:\\\\path_to_cloned_repository\\\\start_BIDS_ConverteR.R C:\\\\path_to_your_dicom_data\\\\study_name  
+
+- or  
+
+> Rscript --vanilla C:/path_to_cloned_repository/start_BIDS_ConverteR.R C:/path_to_your_dicom_data/study_name 
 
 - _vanilla_ sets R to ignore userfiles
 
-_Example of my data structure_  
+__Example of my data structure__  
 
 > Rscript --vanilla /home/niklas/start_BIDS-ConverteR.R /home/niklas/BiDirect_study_data    
+
+- Follow the statements of the script
+- edit the files. Please use LibreOffice for native support. Microsoft Excel has some issues in parsing the csv into spreadsheets and depends on local language and delimiter settings.
+  - user/settings/lut_study_info.csv - you need an exact match of the subject and group regex
+  - user/settings/lut_sessions.csv - name your sessions
+  - user/settings/lut_sequences.csv - name your sequences to BIDS. Please look into the BIDS specifications for further information on valid filenames.
 
 # General workflow
 
@@ -54,7 +78,7 @@ _Example of my data structure_
 ├── Dashboards (containing a lot of information)
 │   ├── internal_dash (containing age, weight, original subject id)
 │   └── public_dash (only BIDS information)
-├── DICOM (you only need this folder, all others will be created)
+├── dicom (you only need this folder, all others will be created)
 │   ├── Baseline
 │   │   ├── 10002_your_study
 │   │   ├── 10003_your_stdy
@@ -223,100 +247,6 @@ Interaction: Change the _export_template.txt_ to the needed export functionality
 - In a first step the converted nii images will be simply converted into the BIDS file structure in the _nii_temp_ folder. But the nii images are not in the standard nomenclature.
 
 In a second step the _nii_ files in the _nii_temp_ folder will be moved and renamed to the final _nii_ folder.
-
-
-
-
-
-
-
-## Prerequisites
-
-_Computer_:
-- R and RStudio
-- actual versions of packages (this results in error messages in the beginning)
-- Windows or Linux machine (both tested)
-
-_Data_:
-- to start: a path to a folder (working directory)
-- this folder needs following substructure: 
-  - working_directory/dicom/Baseline/Bidirect,00001
-  - working_directory/dicom/Baseline/Bidirect,00002
-  - working_directory/dicom/FollowUp/Bidirect,00001
-  - ~/dicom/session_01/studyname,sub_id
-- a dicom folder
-  - containing the session folders
-    - containing the dicom folders of each participant
-
-## How to use it?
-
-- the dicoms of your subjects need to be in one folder per timepoint!  
-  
-
-
-
-
-USING THE SCRIPTS
-
-- synchronize the data of the external drive into the "Bidirect_Dicom/dicom" folder
-- open the "scripts/dcm_converter.Rmd" script and run it step by step
-  - common issues - working directory not set in the markdown document, then the files for conversion are not found
-  - this script indices all subject folders in the dicom structure and compares them with a text document "dcm_converted.txt"
-  - the subjects that are not mentioned in the "dcm_converted" are converted and appended at the document
-- open the "scripts/json_indexing.Rmd" for indexing of the new json files containing sequence metainformationen and append it to the already scanned jsons
-- open the "scripts/json_wrangling_2.Rmd" for cleaning and structuring of the filenames, run it step-by-step
-
-- "reports/plausible implausibe" contain reports that use the outputted df of "json_wrangling_2" and shows you the actual data situation  
-
-
-- move_files.Rmd 
-  - moves plausible files to nii_BIDS
-    - including duplicate sequences (these contain an "_a.nii")
-  - copies duplicates to another folder for manual selection
-  - moves
-    - Smartbrains
-    - Clinical scanner preprocessed sequences
-    - Strange sequences
-
-
-
-
-
-#### longitudinal codebook
-
-Baseline -> s0 
-FollowUp1 -> s2
-FollowUp2 -> s4
-FollowUp2_Plus -> s4_plus  
-FollowUp3 -> s6 
-FollowUp3_Plus -> ses6_plus  
-
-#### standard nomenclature 
-
-__anat__:  
-_T1w_  
-_T2w_  
-_T2_star_  
-_T2_flair_  
-
-__func__:  
-_rest72/133_  
-_epi_emo_faces_ (only at baseline) 
-
-__dwi__:  
-_DTI_  
-
-__plus__ (only at ses3 and ses4, additional high resolution scans for 200 subjects):  
-_T1w_mod_  
-_T2w_mod_  
-_T2_star_mod_  
-_T2_flair_VISTA_  
-
-
-
-
-
-You need a dictionary for renaming your sequence names to the _standard nomenclature_.
 
 
 

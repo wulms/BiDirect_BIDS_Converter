@@ -24,6 +24,9 @@ install_dcm2niix <- function() {
     download.file(dcm2niix, "dcm2niix.zip")
     unzip("dcm2niix.zip")
     file.remove("dcm2niix.zip")
+    if (os == "Linux") {
+      Sys.chmod("dcm2niix", mode = "0777")
+    }
   }
 }
 

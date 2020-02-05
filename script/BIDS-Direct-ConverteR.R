@@ -1,12 +1,14 @@
 # BIDS-Direct-ConverteR
 #setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
 
-print("Welcome to the BIDS-Direct-ConverteR")
-Sys.sleep(3)
+
 
 
 ## general setup
 source("functions/functions.R")
+
+render_asci_art("asci/logo.txt")
+Sys.sleep(3)
 
 # pre-installation step
 install_dcm2niix()
@@ -18,12 +20,8 @@ variables_environment$directories$setup$working_dir <- file.path(args)
 create_templates()
 
 ## Stop 1: indexig input folders (dicom) - abort function - user edit needed
+render_asci_art("asci/prepare_dcm2niix.txt")
 mapping_dicoms(variables_environment$directories$needed$dicom)
-
-
-
-# dcm2niix conversion -----------------------------------------------------
-
 
 diagnostics$dcm2nii_conversion_paths = dcm2nii_wrapper(
   input = diagnostics$dcm2nii_paths$dicom_folder,
@@ -31,6 +29,8 @@ diagnostics$dcm2nii_conversion_paths = dcm2nii_wrapper(
   scanner_type = variables_user$LUT$study_info$scanner_manufacturer
 )
 
+# dcm2niix conversion -----------------------------------------------------
+render_asci_art("asci/convert_with_dcm2niix.txt")
 dcm2nii_converter(diagnostics$dcm2nii_conversion_paths$nii,
                   diagnostics$dcm2nii_paths$nii_temp)
 
@@ -47,15 +47,17 @@ dcm2nii_converter(
 
 
 # json path indexing and extraction ---------------------------------------
-
+render_asci_art("asci/JSON_extractor.txt")
 extract_json_metadata(variables_environment$directories$needed$json_sensitive)
 diagnostics$json_data <- read_metadata()
 
 
 # sequence extraction  ----------------------------------------------------
+render_asci_art("asci/LUT_sequences.txt")
 variables_user$LUT$sequences <- synchronise_lut_sequence(variables_environment$files$lut$lut_sequences)
 
 # BIDS path creation
+render_asci_art("asci/sequence2BIDS.txt")
 diagnostics$json_data <- apply_lut_sequence(diagnostics$json_data)
 
 

@@ -7,6 +7,12 @@ path_to_folder <- function(list_of_files){
   
 }
 
+render_asci_art <- function(asci_file){
+  asci <- readLines(paste0(variables_environment$directories$setup$repo_dir, "/", asci_file), warn=FALSE)
+  # asci <- dput(asci)
+  cat(asci, sep = "\n")
+}
+
 # Time measurement --------------------------------------------------------
 list_items <- function(i, list, string) {
   cat("\014")
@@ -54,12 +60,12 @@ create_templates <- function () {
     )
     print("Creating template files --------")
     # Study info file <- user edit
-    write_csv2(
+    write_csv(
       as.data.frame(variables_environment$templates$variables),
       variables_environment$files$lut$lut_study_info
     )
     # Template file
-    write_csv2(
+    write_csv(
       as.data.frame(variables_environment$templates$variables),
       variables_environment$files$lut$example_lut_study_info
     )
@@ -115,8 +121,9 @@ mapping_dicoms <- function(dicom_folder) {
   dicoms_mapping <<-
     list_dicom_folders(dicom_folder)
   variables_user$folder$dicoms <<- dicoms_mapping
-  print("These files were found (max. 25 shown).")
-  print.data.frame(dicoms_mapping, max = 25)
+  print("These files were found.")
+  print.data.frame(dicoms_mapping)
+  cat("\n\n")
   Sys.sleep(2)
   # Session ID unique readout
   unique_variables <-
@@ -124,8 +131,8 @@ mapping_dicoms <- function(dicom_folder) {
       session_id = unique(dicoms_mapping$your_session_id),
       session_id_BIDS = "1/2/.../4 or more?"
     )
-  print("Unique sessions identified:")
-  print(unique_variables)
+  # print("Unique sessions identified:")
+  # print(unique_variables)
   Sys.sleep(2)
   
   # Session ID update, plausibility check and readout
@@ -136,7 +143,7 @@ mapping_dicoms <- function(dicom_folder) {
     else if (any(str_detect(input, "[:blank:]"))) {stop("Found a row, that contains a blank. Please use only alphanumeric signs.")}
     else {print("Your lut_sessions.csv looks fine.")}
   }
-  
+  cat("\n\n")
   if (file.exists(variables_environment$files$lut$lut_sessions) == 0) {
     print(
       paste0(
@@ -145,11 +152,11 @@ mapping_dicoms <- function(dicom_folder) {
         "' was not found. Creating this file and a template with prefix 'example_'."
       )
     )
-    write_csv2(
+    write_csv(
       variables_environment$templates$session_variables,
       variables_environment$files$lut$example_lut_session
     )
-    write_csv2(unique_variables,
+    write_csv(unique_variables,
               variables_environment$files$lut$lut_sessions)
     stop("Script aborts here: Please edit the lut_session_file and restart!")
   } else {
@@ -166,16 +173,18 @@ mapping_dicoms <- function(dicom_folder) {
     print("This is your session input: ")
     print.data.frame(variables_user$LUT$session)
     
+    cat("\n\n")
     check_session_plausibility(variables_user$LUT$session$session_id_BIDS)
+    cat("\n\n")
     
     print("Comparing for new sessions")
     unique_variables <- unique_variables %>%
       filter(!(session_id %in% variables_user$LUT$session$session_id))
     if(nrow(unique_variables) == 0) {print("No new session-id found.")}
     else {
-      print("New session-id identified. Apoended to lut-session.csv")
+      print("New session-id identified. Appended to lut-session.csv")
       print.data.frame(unique_variables)
-      write_csv2(unique_variables,
+      write_csv(unique_variables,
                 variables_environment$files$lut$lut_sessions,
                 append = TRUE)
       stop("Script aborts - New session-id added. Please edit the lut_session.csv file. Then start script again.")
@@ -216,7 +225,9 @@ mapping_dicoms <- function(dicom_folder) {
     # 
     return(df)
   }
-  print(dicoms_mapping)
+  # print(dicoms_mapping)
+  cat("\n\n")
+  
   print("Subject-id detection, cleaning and plausibility check")
   Sys.sleep(2)
   diagnostics <<-
@@ -233,7 +244,7 @@ mapping_dicoms <- function(dicom_folder) {
             ) == 0
           ) %>%
           print.data.frame()
-        write_csv2(
+        write_csv(
           diagnostics$dcm2nii_paths,
           variables_environment$files$diagnostic$dcm2niix_paths
         )
@@ -256,9 +267,9 @@ mapping_dicoms <- function(dicom_folder) {
           dir.create(variables_environment$directories$needed$user_diagnostics, 
                      showWarnings = FALSE, 
                      recursive = TRUE)
-          write_csv2(
+          write_csv(
             diagnostics$dcm2nii_paths,
-            "user/diagnostics/step1_dcm2nii_paths_csv2.csv"
+            "user/diagnostics/step1_dcm2nii_paths_csv.csv"
           )
 
           Sys.sleep(2)
@@ -319,14 +330,15 @@ dcm2nii_wrapper <-
 dcm2nii_converter <- function(list, output_folder){
   start_timer <- start_time()
   for (i in seq_along(list)) {
-    list_items(i, list, string = "dcm2niix conversion: output nii.gz + json.header (removing sensitive information like birthdate, gender, weight, id")
     done_file <- paste0(output_folder[i], "/done.txt")
+    if (file.exists(done_file) == 0) {
+    list_items(i, list, string = "dcm2niix conversion: output nii.gz + json.header (removing sensitive information like birthdate, gender, weight, id")
     dir.create(output_folder[i],
                recursive = TRUE,
                showWarnings = FALSE)
     measure_time(i, list, start_timer)
-    if (file.exists(done_file) == 0) {
-      system(list[i])
+
+      system(list[i], )
       write_file("done", done_file)
     } else if (file.exists(done_file) == 1) {
       print("Skipped: Subject already processed - folder contains done.txt")
@@ -477,22 +489,32 @@ check_sequence_plausibility <- function(df){
 synchronise_lut_sequence <- function(filename){
   setwd(variables_environment$directories$setup$working_dir)
   sequences <- extract_sequences(diagnostics$json_data)
+  cat("\n\n")
+  
   if(file.exists(filename) == 0){
     print("File lut_sequences.csv does not exist. Creates file.")
     sequences_df <- mutate_sequence(sequences)
     print.data.frame(sequences_df)
-    write_csv2(sequences_df,
+    write_csv(sequences_df,
               filename)
   } else {
     print("File exists - update possible")
     sequences_old <<- read_csv(filename) %>% select(sequence, ProtocolName, SeriesDescription)
     sequences_df <- anti_join(sequences, sequences_old) 
-    print(sequences)
+    # print(sequences)
+    print("Already edited sequences: ")
+    cat("\n\n")
     print(sequences_old)
-    print.data.frame(sequences_df)
+    cat("\n\n")
     if(nrow(sequences_df) > 0){
+      cat("\n\n")
+      print("New sequences: ")
+      cat("\n\n")
+      print.data.frame(sequences_df)
+      cat("\n\n")
+      #variables_user$LUT$sequences
       sequences_df <- sequences_df %>% mutate_sequence()
-      write_csv2(sequences_df,
+      write_csv(sequences_df,
                 filename,
                 append = TRUE)
       stop("lut_sequences.csv was updated. Please edit the BIDS_sequence_ID, type and relevant column and restart the script.")
@@ -507,6 +529,7 @@ synchronise_lut_sequence <- function(filename){
 }
 
 apply_lut_sequence <- function(df){
+  print.data.frame(variables_user$LUT$sequences)
   df <- df %>% mutate(
     group_BIDS = str_extract(subject, regex(variables_user$LUT$study_info$group_id_regex)),
     sequence_BIDS = stri_replace_all_regex(
@@ -523,16 +546,16 @@ apply_lut_sequence <- function(df){
       "_", session,
       "_", sequence_BIDS, ".json"
   ))
-  df_diagnostic_sequence_mapping <- df %>% select(subject, session, sequence, BIDS_json, input_json) 
-  print.data.frame(df_diagnostic_sequence_mapping)
-  write_csv2(df_diagnostic_sequence_mapping, variables_environment$files$diagnostic$nii2BIDS_paths)
+  df_diagnostic_sequence_mapping <- df %>% select(subject, session, sequence, input_json, BIDS_json) 
+  print.data.frame(df_diagnostic_sequence_mapping, right = FALSE)
+  write_csv(df_diagnostic_sequence_mapping, variables_environment$files$diagnostic$nii2BIDS_paths)
   # Output of sensitive informaion df
   df_sensitive_info <- df %>% select(subject, session, group_BIDS, PatientID, PatientName, AcquisitionDateTime, PatientBirthDate, PatientSex, PatientWeight) %>%
     mutate(AcquisitionDateTime = as.Date(AcquisitionDateTime),
            Age = time_length(difftime(AcquisitionDateTime, PatientBirthDate), "years") %>% round(digits = 2)) %>%
     unique()
   print.data.frame(df_sensitive_info)
-  write_csv2(df_sensitive_info, "user/diagnostics/sensitive_subject_information.csv")
+  write_csv(df_sensitive_info, "user/diagnostics/sensitive_subject_information.csv")
   print("Sequence mapping was successful. Saved output to 'user/diagnostic/step2_nii_2_BIDS_paths.csv'. Please look for implausible sequences")
   return(df)
 }
