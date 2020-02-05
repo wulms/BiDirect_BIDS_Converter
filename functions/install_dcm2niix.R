@@ -27,4 +27,3 @@ install_dcm2niix <- function() {
   }
 }
 
-install_dcm2niix()

@@ -51,12 +51,12 @@ create_templates <- function () {
     )
     print("Creating template files --------")
     # Study info file <- user edit
-    write_csv(
+    write_csv2(
       as.data.frame(variables_environment$templates$variables),
       variables_environment$files$lut$lut_study_info
     )
     # Template file
-    write_csv(
+    write_csv2(
       as.data.frame(variables_environment$templates$variables),
       variables_environment$files$lut$example_lut_study_info
     )
@@ -142,11 +142,11 @@ mapping_dicoms <- function(dicom_folder) {
         "' was not found. Creating this file and a template with prefix 'example_'."
       )
     )
-    write_csv(
+    write_csv2(
       variables_environment$templates$session_variables,
       variables_environment$files$lut$example_lut_session
     )
-    write_csv(unique_variables,
+    write_csv2(unique_variables,
               variables_environment$files$lut$lut_sessions)
     stop("Script aborts here: Please edit the lut_session_file and restart!")
   } else {
@@ -172,7 +172,7 @@ mapping_dicoms <- function(dicom_folder) {
     else {
       print("New session-id identified. Apoended to lut-session.csv")
       print.data.frame(unique_variables)
-      write_csv(unique_variables,
+      write_csv2(unique_variables,
                 variables_environment$files$lut$lut_sessions,
                 append = TRUE)
       stop("Script aborts - New session-id added. Please edit the lut_session.csv file. Then start script again.")
@@ -230,7 +230,7 @@ mapping_dicoms <- function(dicom_folder) {
             ) == 0
           ) %>%
           print.data.frame()
-        write_csv(
+        write_csv2(
           diagnostics$dcm2nii_paths,
           variables_environment$files$diagnostic$dcm2niix_paths
         )
@@ -253,17 +253,11 @@ mapping_dicoms <- function(dicom_folder) {
           dir.create(variables_environment$directories$needed$user_diagnostics, 
                      showWarnings = FALSE, 
                      recursive = TRUE)
-          write_csv(
-            diagnostics$dcm2nii_paths,
-            variables_environment$files$diagnostic$dcm2niix_paths
-          )
           write_csv2(
             diagnostics$dcm2nii_paths,
             "user/diagnostics/step1_dcm2nii_paths_csv2.csv"
           )
-          write_tsv(
-            diagnostics$dcm2nii_paths,
-            "user/diagnostics/step1_dcm2nii_paths.tsv"
+
           )
           Sys.sleep(2)
       }
@@ -485,7 +479,7 @@ synchronise_lut_sequence <- function(filename){
     print("File lut_sequences.csv does not exist. Creates file.")
     sequences_df <- mutate_sequence(sequences)
     print.data.frame(sequences_df)
-    write_csv(sequences_df,
+    write_csv2(sequences_df,
               filename)
   } else {
     print("File exists - update possible")
@@ -496,7 +490,7 @@ synchronise_lut_sequence <- function(filename){
     print.data.frame(sequences_df)
     if(nrow(sequences_df) > 0){
       sequences_df <- sequences_df %>% mutate_sequence()
-      write_csv(sequences_df,
+      write_csv2(sequences_df,
                 filename,
                 append = TRUE)
       stop("lut_sequences.csv was updated. Please edit the BIDS_sequence_ID, type and relevant column and restart the script.")
@@ -529,14 +523,14 @@ apply_lut_sequence <- function(df){
   ))
   df_diagnostic_sequence_mapping <- df %>% select(subject, session, sequence, BIDS_json, input_json) 
   print.data.frame(df_diagnostic_sequence_mapping)
-  write_csv(df_diagnostic_sequence_mapping, variables_environment$files$diagnostic$nii2BIDS_paths)
+  write_csv2(df_diagnostic_sequence_mapping, variables_environment$files$diagnostic$nii2BIDS_paths)
   # Output of sensitive informaion df
   df_sensitive_info <- df %>% select(subject, session, group_BIDS, PatientID, PatientName, AcquisitionDateTime, PatientBirthDate, PatientSex, PatientWeight) %>%
     mutate(AcquisitionDateTime = as.Date(AcquisitionDateTime),
            Age = time_length(difftime(AcquisitionDateTime, PatientBirthDate), "years") %>% round(digits = 2)) %>%
     unique()
   print.data.frame(df_sensitive_info)
-  write_csv(df_sensitive_info, "user/diagnostics/sensitive_subject_information.csv")
+  write_csv2(df_sensitive_info, "user/diagnostics/sensitive_subject_information.csv")
   print("Sequence mapping was successful. Saved output to 'user/diagnostic/step2_nii_2_BIDS_paths.csv'. Please look for implausible sequences")
   return(df)
 }
