@@ -8,7 +8,7 @@ print("Setup of variables: ")
 
 variables_environment <- list(
   directories = list(
-    setup = list("working_dir" = "/home/niklas/BIDS_test/",
+    setup = list("working_dir" = args,
                  "dcm2niix_path" = paste0(getwd(), "/dcm2niix")),
     needed = list(
       # input folder

@@ -1,6 +1,5 @@
 # BIDS-Direct-ConverteR
-
-setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
+#setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
 
 print("Welcome to the BIDS-Direct-ConverteR")
 Sys.sleep(3)
@@ -13,7 +12,7 @@ source("functions/functions.R")
 install_dcm2niix()
 
 ## settings
-variables_environment$directories$setup$working_dir <- file.path("/home/niklas/BIDS_test/")
+variables_environment$directories$setup$working_dir <- file.path(args)
  
 # Create templates
 create_templates()

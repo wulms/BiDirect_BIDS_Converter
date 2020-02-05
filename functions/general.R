@@ -1,5 +1,8 @@
 # general functions - these are used at different points of the script
 
+options(readr.num_columns = 0)
+options(width = 320)
+
 path_to_folder <- function(list_of_files){
   
 }
@@ -258,7 +261,6 @@ mapping_dicoms <- function(dicom_folder) {
             "user/diagnostics/step1_dcm2nii_paths_csv2.csv"
           )
 
-          )
           Sys.sleep(2)
       }
     }

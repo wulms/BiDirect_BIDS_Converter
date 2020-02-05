@@ -1,18 +1,18 @@
-# libraries
 
-library(readr)
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(stringi)
-library(forcats)
-library(lubridate)
+packages <- c("tidyverse", "stringi", "lubridate", "rjson")
 
-library(rjson)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(packages, character.only = TRUE)
 
-library(tictoc)
 
-library(flexdashboard)
-library(DT)
+# # libraries
+# library(readr)
+# library(dplyr)
+# library(tidyr)
+# library(stringr)
+# library(stringi)
+# library(forcats)
+# library(lubridate)
+# 
+# library(rjson)
 
-library(highcharter)

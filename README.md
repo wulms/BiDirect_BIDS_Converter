@@ -6,6 +6,28 @@ Here you find the generalizable version for your own datasets (on Philips tested
 
 [![DOI](https://zenodo.org/badge/195199025.svg)](https://zenodo.org/badge/latestdoi/195199025)
 
+
+
+# How-to-use:
+- requirement: R installed on your system (tested on Ubuntu 18.04 and Windows 10)
+- data in folder structure: __study_root/dicom/session/subject/dicom_folders_and_data__
+- download the testing branch version (merged soon)
+- unzip
+- start a terminal and enter
+- __Linux/Mac__  
+
+> Rscript --vanilla path_to_cloned_repository/start_BIDS_ConverteR.R path_to_your_dicom_data/study_root  
+
+- __Windows__  
+
+> Rscript --vanilla C:\\path_to_cloned_repository\\start_BIDS_ConverteR.R C:\\path_to_your_dicom_data\\study_root  
+
+- _vanilla_ sets R to ignore userfiles
+
+_Example of my data structure_  
+
+> Rscript --vanilla /home/niklas/start_BIDS-ConverteR.R /home/niklas/BiDirect_study_data    
+
 # General workflow
 
 ![](workflow/Workflow.png)
