@@ -14,7 +14,7 @@ options(width = 320)
 path_to_folder <- function(list_of_files) {
   paths_folder <- sub("[/][^/]+$", "", list_of_files)
   paths_folder <- unique(paths_folder)
-  print(head(paths_folder))
+  # print(head(paths_folder))
   lapply(paths_folder,
          dir.create,
          recursive = TRUE,
@@ -215,11 +215,11 @@ mapping_dicoms <- function(dicom_folder) {
         subjects_BIDS = your_subject_id %>%
           str_remove_all(regex("plus", ignore_case = TRUE)) %>%
           str_remove_all(regex(pattern_remove, ignore_case = TRUE)) %>%
-          str_remove("10738BiDirecteigentlich"),# for BiDirect!
+          str_remove("10738eigentlich"),# for BiDirect!
         group_BIDS = str_extract(subjects_BIDS, regex(group_regex)),
         session_BIDS = stri_replace_all_regex(
           your_session_id,
-          lut_session$session_id,
+          paste0("^",lut_session$session_id,"$"),
           lut_session$session_id_BIDS,
           vectorize_all = FALSE
         ),
@@ -306,7 +306,7 @@ dcm2nii_wrapper <-
            output,
            scanner_type,
            dcm2niix_path = variables_environment$directories$setup$dcm2niix_path) {
-    if (scanner_type == "Philips") {
+    if (scanner_type == "Philips" | scanner_type == "Siemens") {
       commands <- tibble(
         nii = paste0(dcm2niix_path,
                      " -o ",
@@ -325,13 +325,11 @@ dcm2nii_wrapper <-
           input
         )
       )
-    } else if (scanner_type == "Siemens") {
-      stop("Not supported")
     } else if (scanner_type == "GE") {
       stop("Not supported")
     } else {
       stop(
-        "Wrong scanner type: choose between 'Philips', 'Siemens', 'GE' (only tested on Philips)!"
+        "Wrong scanner type: choose between 'Philips', 'Siemens', 'GE' (only tested on Philips|Siemens)!"
       )
     }
     return(commands)
@@ -350,7 +348,6 @@ dcm2nii_converter <- function(list, output_folder){
                recursive = TRUE,
                showWarnings = FALSE)
     measure_time(i, list, start_timer)
-
       system(list[i], )
       write_file("done", done_file)
     } else if (file.exists(done_file) == 1) {
@@ -360,7 +357,6 @@ dcm2nii_converter <- function(list, output_folder){
   measure_time(i, list, start_timer)
   print("===================================")
   print("Congratulation - the conversion was successful.")
-  Sys.sleep(3)
 }
 
 
@@ -607,16 +603,81 @@ copy2BIDS <- function(csv_file){
            BIDS_bvec = str_replace(BIDS_json, ".json", ".bvec")
   )
   path_to_folder(csv_file_relevant$BIDS_json)
+
+  copy_files <- function(from, to){
+    for (i in seq(from)) {
+      print(paste("Copied file ", i, " of ", length(from),  " to: ", to[i]))
+      #cat("\n")
+      file.copy(from[i], to[i], overwrite = FALSE)
+    }
+  cat("\n\n\n")
+  }
+  
   # non dwi
-  file.copy(from = csv_file_relevant_non_dwi$input_json, to = csv_file_relevant_non_dwi$BIDS_json)
-  file.copy(from = csv_file_relevant_non_dwi$input_nii, to = csv_file_relevant_non_dwi$BIDS_nii)
+  copy_files(from = csv_file_relevant_non_dwi$input_json, to = csv_file_relevant_non_dwi$BIDS_json)
+  copy_files(from = csv_file_relevant_non_dwi$input_nii, to = csv_file_relevant_non_dwi$BIDS_nii)
   # dwi
-  file.copy(from = csv_file_relevant_dwi$input_json, to = csv_file_relevant_dwi$BIDS_json)
-  file.copy(from = csv_file_relevant_dwi$input_nii, to = csv_file_relevant_dwi$BIDS_nii)
-  file.copy(from = csv_file_relevant_dwi$input_bval, to = csv_file_relevant_dwi$BIDS_bval)
-  file.copy(from = csv_file_relevant_dwi$input_bvec, to = csv_file_relevant_dwi$BIDS_bvec)
+  copy_files(from = csv_file_relevant_dwi$input_json, to = csv_file_relevant_dwi$BIDS_json)
+  copy_files(from = csv_file_relevant_dwi$input_nii, to = csv_file_relevant_dwi$BIDS_nii)
+  copy_files(from = csv_file_relevant_dwi$input_bval, to = csv_file_relevant_dwi$BIDS_bval)
+  copy_files(from = csv_file_relevant_dwi$input_bvec, to = csv_file_relevant_dwi$BIDS_bvec)
 }
 
-
-
+# add BIDS metadata (dataset.json, CHANGES, README)
+#' Title
+#'
+#' @return
+#' @export
+#'
+#' @examples
+add_BIDS_metadata <- function(){
+  add_participants_tsv <- function(){
+    # Select columns from json dataframe, mutate relevant columns
+    patient_tsv <- diagnostics$json_data %>% 
+      select(subject, session, group_BIDS, PatientBirthDate, AcquisitionDateTime, PatientSex, PatientWeight) %>%
+      rename(participant_id = subject,
+             group_id = group_BIDS,
+             birthdate = PatientBirthDate,
+             acquisitiondate = AcquisitionDateTime,
+             sex = PatientSex,
+             weight = PatientWeight) %>%
+      mutate(acquisitiondate = as.Date(acquisitiondate),
+             age = time_length(difftime(acquisitiondate, birthdate), "years") %>% round(digits = 2)) %>%
+      unique()
+    # Write participants.tvs file
+    write_tsv(patient_tsv,
+              paste0(variables_environment$directories$needed$bids, "/participants.tsv"))
+    writeLines(participants, 
+               paste0(variables_environment$directories$needed$bids, "/participants.json"))
+    
+  }
+  add_participants_tsv()
+  # add CHANGES, README, dataset_description 
+  
+  write_metadata_bids <- function(txt_input, file_path){
+    if (file.exists(file_path) == 0) {
+      writeLines(txt_input, file_path)
+    }
+  }
+  
+  write_metadata_bids(CHANGES, variables_environment$files$bids$bids_changes_txt)
+  write_metadata_bids(README,  variables_environment$files$bids$bids_readme_txt)
+  write_metadata_bids(dataset_description, variables_environment$files$bids$bids_dataset_json)
+  
+  create_taskname_metadata <- function(json_df){
+    taskname_df <- json_df %>% as_tibble() %>%
+      filter(type == "func") %>% 
+      select(BIDS_sequence_ID, RepetitionTime) %>%
+      unique() %>%
+      mutate(string = paste0('{\n\t"TaskName": "', BIDS_sequence_ID, '",\n\t"RepetitionTime": ', RepetitionTime, '\n}'),
+             filename = paste0(variables_environment$directories$needed$bids, "/", taskname_jsons$BIDS_sequence_ID, ".json"))
+    return(taskname_df)
+  }
+  
+  taskname_jsons <- create_taskname_metadata(diagnostics$json_data)
+  for (i in 1:nrow(taskname_jsons))
+    write_metadata_bids(taskname_jsons$string[i],
+                        taskname_jsons$filename[i])
+  
+}
 

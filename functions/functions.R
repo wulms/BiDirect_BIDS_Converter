@@ -6,6 +6,7 @@ print("Loading environment and libraries.")
 source("functions/install_dcm2niix.R")
 source("functions/libraries.R")
 source("functions/environment.R")
+source("functions/bids_files.R")
 
 
 ## general functions

@@ -2,13 +2,12 @@
 #setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
 
 
-args = "/home/niklas/BIDS_test/"
+# args = "/home/niklas/BIDS_test/"
 
 ## general setup
 source("functions/functions.R")
 
 render_asci_art("asci/logo.txt")
-Sys.sleep(3)
 
 # pre-installation step
 install_dcm2niix()
@@ -61,11 +60,12 @@ render_asci_art("asci/sequence2BIDS.txt")
 diagnostics$json_data <- apply_lut_sequence(diagnostics$json_data)
 
 
-# copy to BIDS
+# Copy2BIDS ---------------------------------------------------------------
 render_asci_art("asci/copy2BIDS.txt")
 copy2BIDS(variables_environment$files$diagnostic$nii2BIDS_paths)
 
-
+# add BIDS metadata
+add_BIDS_metadata()
 
 
 
