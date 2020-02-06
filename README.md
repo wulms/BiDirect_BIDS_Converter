@@ -10,7 +10,7 @@ Here you find the generalizable version for your own datasets (on Philips and Si
 This tool is a user-friendly tool to convert your dicom study data to BIDS.  
 
 - It is required, that you have a structured naming convention on your folders, that contain the dicoms.  
-- You simply have to run the start command again and again, until each setting and issue is resolved.  
+- You simply have to run the `Rscript --vanilla start_BIDS_ConverteR.R /home/path/study_data` again and again, until each setting and issue is resolved.  
 - Step 1: setup of subject info (subject-regex, group-regex)  
   - pattern_to_remove-regex - that removes redundant appendices from subject string  
 - Step 2: setup of session info  
@@ -26,7 +26,10 @@ This tool is a user-friendly tool to convert your dicom study data to BIDS.
     - the relevant sequences are copied to BIDS  
 - Copy2BIDS
   - copies relevant sequences to BIDS
-  - creates study_description.json, participants.tsv/.json, README, CHANGE and TaskName.json
+  - creates 
+    - automated output based on dicom headers: participants.tsv/.json, TaskName.json
+    - template output of: study_description.json, README and CHANGES 
+      - edit these files, to fit to your study!
 - Check your dataset with [BIDS-Validator](https://bids-standard.github.io/bids-validator/)
 
 You have a user folder, where you see your settings on session, sequence and subject information (subject-id and group-id). 
@@ -65,18 +68,16 @@ study_name
  
 ### Unix
 
-> cd /home/niklas/BiDirect_BIDS_Converter
-
-> Rscript --vanilla start_BIDS_ConverteR.R /home/niklas/BiDirect_study_data  
+`cd /home/niklas/BiDirect_BIDS_Converter`  
+`Rscript --vanilla start_BIDS_ConverteR.R /home/niklas/BiDirect_study_data`  
 
 
 ### Windows  
 
-> cd C:\\User\\niklas\\BiDirect_BIDS_Converter
-
-> Rscript --vanilla start_BIDS_ConverteR.R C:\\\\data\\\\BiDirect_study_data  
-
-> Rscript --vanilla start_BIDS_ConverteR.R C:/data/BiDirect_study_data 
+`cd C:\\User\\niklas\\BiDirect_BIDS_Converter`  
+choose one:  
+`Rscript --vanilla start_BIDS_ConverteR.R C:\\\\data\\\\BiDirect_study_data`  
+`Rscript --vanilla start_BIDS_ConverteR.R C:/data/BiDirect_study_data` 
 
 You need 2 backslashes here. Backslash is an escape character in R. It is also possible to use slash "/".
 
