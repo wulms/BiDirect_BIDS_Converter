@@ -21,6 +21,11 @@ participants <- '{
     "Description": "Session of study",
     "Units": "Session Name, Ordinal"
   },
+    "group_id": {
+    "LongName": "group_id",
+    "Description": "group/cohort of the participant - regex of BIDS-Direct-ConverteR",
+    "Units": "years"
+  },
   "birthdate": {
     "LongName": "birthdate",
     "Description": "birthdate of the participant - extracted from dicom header",
@@ -31,30 +36,25 @@ participants <- '{
     "Description": "acquisitiondate of the participant at the mentioned session - extracted from dicom header",
     "Units": "datetime"
   },
-  "age": {
-    "LongName": "age",
-    "Description": "age of the participant - time difference between birthdate and acquisitiondate",
-    "Units": "years"
-  },
-    "group_id": {
-    "LongName": "group_id",
-    "Description": "group/cohort of the participant - regex of BIDS-Direct-ConverteR",
-    "Units": "years"
-  },
-  "weight": {
-    "LongName": "weight",
-    "Description": "weight of the participant as reported by the participant - extracted from dicom header",
-    "Levels": {
-      "Units": "kg"
-    }
-  },
-  "sex": {
+    "sex": {
     "LongName": "sex",
     "Description": "sex of the participantas reported by the participant - extracted from dicom header",
     "Levels": {
       "m": "male",
       "f": "female"
     }
+  },
+    "weight": {
+    "LongName": "weight",
+    "Description": "weight of the participant as reported by the participant - extracted from dicom header",
+    "Levels": {
+      "Units": "kg"
+    }
+  },
+  "age": {
+    "LongName": "age",
+    "Description": "age of the participant - time difference between birthdate and acquisitiondate",
+    "Units": "years"
   }
 }'
 

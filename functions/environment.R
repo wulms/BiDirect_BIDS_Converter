@@ -58,7 +58,7 @@ variables_environment$files = list(
   bids = list(
   "bids_changes_txt" = paste0(
     variables_environment$directories$needed$bids,
-    "/CHANGES.txt"
+    "/CHANGES"
   ),
   "bids_dataset_json" = paste0(
     variables_environment$directories$needed$bids,
@@ -66,7 +66,7 @@ variables_environment$files = list(
   ),
   "bids_readme_txt" = paste0(
     variables_environment$directories$needed$bids,
-    "/README.txt"
+    "/README"
   )),
   lut = list(
   # LUT files for toolbox
