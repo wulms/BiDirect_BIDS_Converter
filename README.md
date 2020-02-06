@@ -48,7 +48,7 @@ You only need to customize these to your study/authors/grant/license.
 
 ## Input folder structure 
 ```bash
-study_name
+study_data
 └── dicom
     ├── Baseline
     │   ├── 10002_your_study
@@ -69,15 +69,15 @@ study_name
 ### Unix
 
 `cd /home/niklas/BiDirect_BIDS_Converter`  
-`Rscript --vanilla start_BIDS_ConverteR.R /home/niklas/BiDirect_study_data`  
+`Rscript --vanilla start_BIDS_ConverteR.R /home/niklas/study_data`  
 
 
 ### Windows  
 
 `cd C:\\User\\niklas\\BiDirect_BIDS_Converter`  
 choose one:  
-`Rscript --vanilla start_BIDS_ConverteR.R C:\\\\data\\\\BiDirect_study_data`  
-`Rscript --vanilla start_BIDS_ConverteR.R C:/data/BiDirect_study_data` 
+`Rscript --vanilla start_BIDS_ConverteR.R C:\\\\data\\\\study_data`  
+`Rscript --vanilla start_BIDS_ConverteR.R C:/data/study_data` 
 
 You need 2 backslashes here. Backslash is an escape character in R. It is also possible to use slash "/".
 
