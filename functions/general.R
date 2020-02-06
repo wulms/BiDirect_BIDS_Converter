@@ -670,7 +670,7 @@ add_BIDS_metadata <- function(){
       select(BIDS_sequence_ID, RepetitionTime) %>%
       unique() %>%
       mutate(string = paste0('{\n\t"TaskName": "', BIDS_sequence_ID, '",\n\t"RepetitionTime": ', RepetitionTime, '\n}'),
-             filename = paste0(variables_environment$directories$needed$bids, "/", taskname_jsons$BIDS_sequence_ID, ".json"))
+             filename = paste0(variables_environment$directories$needed$bids, "/", BIDS_sequence_ID, ".json"))
     return(taskname_df)
   }
   
