@@ -34,13 +34,8 @@ dcm2nii_converter(diagnostics$dcm2nii_conversion_paths$nii,
                   diagnostics$dcm2nii_paths$nii_temp)
 
 # json with sensitive information
-dcm2nii_converter(
-  diagnostics$dcm2nii_conversion_paths$json,
-  str_replace(
-    diagnostics$dcm2nii_paths$nii_temp,
-    variables_environment$directories$needed$nii,
-    variables_environment$directories$needed$json_sensitive
-  )
+dcm2nii_converter(diagnostics$dcm2nii_conversion_paths$json,  
+                  str_replace(diagnostics$dcm2nii_paths$nii_temp,variables_environment$directories$needed$nii,  variables_environment$directories$needed$json_sensitive)
 )
 
 
@@ -55,6 +50,7 @@ diagnostics$json_data <- read_metadata()
 render_asci_art("asci/LUT_sequences.txt")
 variables_user$LUT$sequences <- synchronise_lut_sequence(variables_environment$files$lut$lut_sequences)
 
+print.data.frame(variables_user$LUT$sequences)
 # BIDS path creation
 render_asci_art("asci/sequence2BIDS.txt")
 diagnostics$json_data <- apply_lut_sequence(diagnostics$json_data)
@@ -66,7 +62,7 @@ copy2BIDS(variables_environment$files$diagnostic$nii2BIDS_paths)
 
 # add BIDS metadata
 add_BIDS_metadata()
-
+render_asci_art("asci/success.txt")
 
 
 

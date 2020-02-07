@@ -32,13 +32,13 @@ variables_environment <- list(
   # template variables
   
   templates = list(
-    variables = list(
+    variables = tibble(
       "study_name" = "Your study",
       "method" = "MRI",
       # only MRI support (EEG/MEG) maybe later
       "scanner_manufacturer" = "Philips",
       # only Philips support (Siemens/GE later)
-      "subject_id_regex" = "^[:digit:]{5}$",
+      "subject_id_regex" = "[:digit:]{5}",
       "group_id_regex" = "[:digit:]{1}(?=[:digit:]{4})",
       "remove_pattern_regex" = "[:punct:]{1}|[:blank:]{1}|((b|d)i(d|b)i|bid|bd|bdi)(ect|rect)($|(rs|T2TSE|inclDIRSequenz|neu|abbruch))"
     ),
@@ -56,64 +56,28 @@ variables_environment <- list(
 variables_environment$files = list(
   # General BIDS files
   bids = list(
-  "bids_changes_txt" = paste0(
-    variables_environment$directories$needed$bids,
-    "/CHANGES"
-  ),
-  "bids_dataset_json" = paste0(
-    variables_environment$directories$needed$bids,
-    "/dataset_description.json"
-  ),
-  "bids_readme_txt" = paste0(
-    variables_environment$directories$needed$bids,
-    "/README"
-  )),
-  lut = list(
+    "bids_changes_txt" = paste0(variables_environment$directories$needed$bids,"/CHANGES"),
+    "bids_dataset_json" = paste0(variables_environment$directories$needed$bids, "/dataset_description.json"),
+    "bids_readme_txt" = paste0(variables_environment$directories$needed$bids, "/README")),
   # LUT files for toolbox
-  "example_lut_study_info" = paste0(
-    variables_environment$directories$needed$user_settings,
-    "/example_lut_study_info.csv"
+  lut = list(
+    # "example_lut_study_info" = paste0(variables_environment$directories$needed$user_settings, "/example_lut_study_info.csv"),
+    # "example_lut_session" = paste0(variables_environment$directories$needed$user_settings, "/example_lut_session.csv"),
+    "lut_sessions" = paste0(variables_environment$directories$needed$user_settings, "/lut_sessions.csv"),
+    "lut_sequences" = paste0(variables_environment$directories$needed$user_settings, "/lut_sequences.csv"),
+    "lut_study_info" = paste0(variables_environment$directories$needed$user_settings, "/lut_study_info.csv")
   ),
-  "example_lut_session" = paste0(
-    variables_environment$directories$needed$user_settings,
-    "/example_lut_session.csv"
-  ),
-  "lut_sessions" = paste0(
-    variables_environment$directories$needed$user_settings,
-    "/lut_sessions.csv"
-  ),
-  "lut_sequences" = paste0(
-    variables_environment$directories$needed$user_settings,
-    "/lut_sequences.csv"
-  ),
-  "lut_study_info" = paste0(
-    variables_environment$directories$needed$user_settings,
-    "/lut_study_info.csv"
-  )),
   # Extracted json metadata
   diagnostic = list(
   # Diagnostic debugging output
-  "dcm2niix_paths" = paste0(
-    variables_environment$directories$needed$user_diagnostics,
-    "/step1_dcm2nii_paths.csv"
+  "dcm2niix_paths" = paste0(variables_environment$directories$needed$user_diagnostics, "/step1_dcm2nii_paths.csv"),
+  "nii2BIDS_paths" = paste0(variables_environment$directories$needed$user_diagnostics, "/step2_nii_2_BIDS_paths.csv"),
+  "metadata" = paste0(variables_environment$directories$setup$working_dir, "/user/diagnostics/step3_json_extracted_metadata.tsv")
   ),
-  "nii2BIDS_paths" = paste0(
-    variables_environment$directories$needed$user_diagnostics,
-    "/step2_nii_2_BIDS_paths.csv"
-  ),
-  "metadata" = paste0(
-    variables_environment$directories$needed$user_diagnostics,
-    "/step3_json_extracted_metadata.csv"
-  )),
-  dashboards = list(
   # Dashboards for internal and external use
-  "internal_use" = paste0(
-    variables_environment$directories$optional$dashboards,
-    "/dashboard_internal_use.html"
-  ),
-  "external_use" = paste0(
-    variables_environment$directories$optional$dashboards,
-    "/dashboard_external_use.html"
-  ))
+  dashboards = list(
+  "internal_use" = paste0(variables_environment$directories$optional$dashboards, "/dashboard_internal_use.html"),
+  "external_use" = paste0(variables_environment$directories$optional$dashboards, "/dashboard_external_use.html")
+  )
 )
 

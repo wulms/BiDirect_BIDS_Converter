@@ -1,8 +1,10 @@
 # BiDirect_BIDS_Converter
 
-This tool is a project of my PhD. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, Wilhelms-University, Münster, Germany). 
+In 3 user-interactions (csv editings) from a folder containing your participants dicoms to a BIDS specification dataset, that passes the BIDS-Validator.
 
-Here you find the generalizable version for your own datasets (on Philips and Siemens tested), the release will be in around 2 weeks from now (first week of February 2020).
+This tool is a project of my PhD. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, Wilhelms-University, Münster, Germany). 
+Tested on Windows and Ubuntu 18.04.
+Conversion tested with Siemens and Philips data.
 
 [![DOI](https://zenodo.org/badge/195199025.svg)](https://zenodo.org/badge/latestdoi/195199025)
 
@@ -115,55 +117,175 @@ You need 2 backslashes here. Backslash is an escape character in R. It is also p
 
 # General folder structure (will be created - you only need the DICOM Folder!)
 
+## input data
+
+Session and subjects names can be assigned flexible.
 
 ```bash
-├── BIDS - output folder of your data to BIDS standard
-│   ├── export
-│   └── sourcedata
-├── BIDS_anonymized (in work) - anonymizing structural images using pydeface or fsl_deface
-│   └── sourcedata
-├── BIDS_export (in work) - select sequences, sessions and subjects/groups, you want to export.
-│   │      These will be copied here.
-│   └── sourcedata
-├── BIDS_template (these are templates you have to edit and move into the sourcedata/ 
-│   │     directories)
-│   ├── CHANGES
-│   ├── dataset_description.json
-│   └── README
-├── Dashboards (containing a lot of information)
-│   ├── internal_dash (containing age, weight, original subject id)
-│   └── public_dash (only BIDS information)
-├── dicom (you only need this folder, all others will be created)
-│   ├── Baseline
-│   │   ├── 10002_your_study
-│   │   ├── 10003_your_stdy
-│   │   └── 10004_yr_study
-│   ├── FollowUp
-│   │   ├── 10003_your_study
-│   │   ├── 10004_my_Study
-│   │   └── 10005_your_study
-├── json_files.csv
-├── NII_headers <- non-anonymized DICOM headers (containing subject-id, gender, weight,        
-│   │      acquisition date) - only JSON
-│   ├── s0
-│   └── s2
-├── NII_temp <- anonymized DICOM headers written to JSON + NII temporary folder
-│   ├── s0
-│   └── s2
-├── user_information
-│   ├── 1_dcm2niix_paths.csv - file for qc of path renaming DICOM2NIIX step (your subject- and 
-│   │         session-id to BIDS-subject- and BIDS-session-id)
-│   └── 2_sequence2BIDS_renaming.csv - file for qc of sequence renaming from /NII_temp to /BIDS
-└── user_settings
-    ├── example_session.csv - template file
-    ├── example_study_info.csv - template file
-    ├── sequence_info.csv - Codebook for sequences (identified by file output name of dcm2niix  
-    │       conversion, '3Dmprage' to 'T1w', please read the BIDS specification)
-    ├── session_info.csv - Codebook for session (identified by input folder name 'Baseline',    
-    │       'FollowUp', map your output (eg. 0 and 1)
-    └── study_info.csv - Codebook for general study information, regex for subjects             
-    ([:digit:]{5} in our case), patterns to remove ('_your_study|_yr_stdy|_my_Study') and       
-    group id regex ([:digit:]{1}(<=?[:digit:]{4}))
+my_study_folder
+└── dicom
+    ├── Baseline
+    │   ├── 10002_BiDirect
+    │   │   ├── DICOM
+    │   │   └── DICOMDIR
+    │   ├── 10003_BiDirect
+    │   │   ├── DICOM
+    │   │   └── DICOMDIR
+    │   ├── 10004_BiDirect
+    │   │   ├── DICOM
+    │   │   └── DICOMDIR
+    │   └── 10294_BiDirect
+    │       ├── DICOM
+    │       └── DICOMDIR
+    └── FollowUp
+        ├── 10004_BiDirect
+        │   ├── DICOM
+        │   └── DICOMDIR
+        ├── 10005_BiDirect
+        │   ├── DICOM
+        │   └── DICOMDIR
+        └── 10008_BiDirect
+            ├── DICOM
+            └── DICOMDIR
+```
+
+## Step 1: edit information in user diagnostics on session naming and study info
+
+Study info needs a regex for subject- and group-id as well as a regex for redundant appendices in filenames.
+This convention is strict by design.  
+
+```bash
+my_study_folder
+└── user
+    ├── diagnostics
+    │   ├── step1_dcm2nii_paths.csv
+    └── settings
+        ├── lut_sessions.csv
+        └── lut_study_info.csv
+```
+
+
+### Example 
+foldername: _10001_is_subject_100002_
+
+__regex__: "[:digit:]{5}" would detect 10001. But the file was named to 10002 in the filename by someone.
+__pattern_to_remove__: "10001_is_subject_" <- now in your csv file is information, what you have removed from the filename and error tracking is much easier - because it is written to a file.  
+
+To remove multiple pattern simply join them using `pattern1|pattern2|pattern3`.
+
+## Step 2: dcm2nii conversion using dcm2niix by Chris Rorden
+
+```bash
+nii_temp
+├── json_sensitive - only json files containing sensitive information (PatientId, Birthdate, Sex, Weight, AcquisitionDate)
+│   ├── ses-0
+│   │   ├── sub-10002
+│   │   │   ├── 3DT1TFElrs.json
+│   │   │   ├── done.txt
+│   │   │   ├── DTI36Jones20n.json
+│   │   │   ├── FLAIR_TE120.json
+│   │   │   ├── fMRssh2s35_82.json
+│   │   │   ├── fMRsshpRS72.json
+│   │   │   ├── SURVEY_MST_i00001.json
+│   │   │   ├── SURVEY_MST_i00004.json
+│   │   │   ├── SURVEY_MST_i00007.json
+│   │   │   └── T2_FFE_Blut.json
+│   │   ├── sub-10003
+│   │   │   └── ...
+│   │   ├── sub-10004
+│   │   │   └── ...
+│   │   └── sub-10294
+│   │       └── ...
+│   └── ses-2
+│       ├── sub-10004
+│       │   └── ...
+│       ├── sub-10005
+│       │   └── ...
+│       └── sub-10008
+│           └── ...
+└── nii - json + nii files, removed sensitive information from header
+    ├── ses-0
+    │   ├── sub-10002
+    │   │   ├── 3DT1TFElrs.json
+    │   │   ├── 3DT1TFElrs.nii.gz
+    │   │   ├── DTI36Jones20n.bval
+    │   │   ├── DTI36Jones20n.bvec
+    │   │   ├── DTI36Jones20n.json
+    │   │   ├── DTI36Jones20n.nii.gz
+    │   │   ├── FLAIR_TE120.json
+    │   │   ├── FLAIR_TE120.nii.gz
+    │   │   ├── fMRssh2s35_82.json
+    │   │   ├── fMRssh2s35_82.nii.gz
+    │   │   ├── fMRsshpRS72.json
+    │   │   ├── fMRsshpRS72.nii.gz
+    │   │   ├── SURVEY_MST_i00001.json
+    │   │   ├── SURVEY_MST_i00001.nii.gz
+    │   │   ├── SURVEY_MST_i00004.json
+    │   │   ├── SURVEY_MST_i00004.nii.gz
+    │   │   ├── SURVEY_MST_i00007.json
+    │   │   ├── SURVEY_MST_i00007.nii.gz
+    │   │   ├── T2_FFE_Blut.json
+    │   │   └── T2_FFE_Blut.nii.gz
+    │   └── sub-...
+    └── ses-2
+        └── sub-...
+
+```
+
+## Step 3: indexes all json files and merges the information, extracts the unique sequence patterns amd sensivite information.
+
+```bash
+└── user
+    ├── diagnostics
+    │   └── sensitive_subject_information.csv
+    └── settings
+        └── lut_sequences.csv
+```
+
+## Step 4: Edit the lut_sequences.csv. Map the sequences to BIDS names, BIDS type and choose relevance.
+
+```bash
+└── user
+    └── diagnostics
+        └── step2_nii_2_BIDS_paths.csv
+```
+
+
+
+```bash
+bids
+└── sourcedata
+    ├── CHANGES
+    ├── dataset_description.json
+    ├── participants.json
+    ├── participants.tsv
+    ├── README
+    ├── sub-10002
+    │   └── ses-0
+    │       ├── anat
+    │       │   ├── sub-10002_ses-0_FLAIR.json
+    │       │   ├── sub-10002_ses-0_FLAIR.nii.gz
+    │       │   ├── sub-10002_ses-0_T1w.json
+    │       │   ├── sub-10002_ses-0_T1w.nii.gz
+    │       │   ├── sub-10002_ses-0_T2star.json
+    │       │   └── sub-10002_ses-0_T2star.nii.gz
+    │       ├── dwi
+    │       │   ├── sub-10002_ses-0_dwi.bval
+    │       │   ├── sub-10002_ses-0_dwi.bvec
+    │       │   ├── sub-10002_ses-0_dwi.json
+    │       │   └── sub-10002_ses-0_dwi.nii.gz
+    │       └── func
+    │           ├── sub-10002_ses-0_task-faces_bold.json
+    │           ├── sub-10002_ses-0_task-faces_bold.nii.gz
+    │           ├── sub-10002_ses-0_task-rest_bold.json
+    │           └── sub-10002_ses-0_task-rest_bold.nii.gz
+    ├── sub-10003 ...
+    ├── sub-10004 ...
+    ├── sub-10005 ... 
+    ├── sub-10294 ...
+    ├── task-faces_bold.json
+    └── task-rest_bold.json
+
 ```
 
 
