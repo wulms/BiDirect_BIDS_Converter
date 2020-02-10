@@ -13,10 +13,11 @@ copy_files <- function(from, to, string){
                to = to) %>%
     filter(file.exists(to) == 0)
   if(nrow(df) > 0) {
+    start_timer <- Sys.time()
     for (i in seq(df$from)) {
       # print(paste("Copied file ", i, " of ", length(from),  " to: ", to[i]))
       # if(file.exists(to[i]) == 0) {
-      show_file_progress(i, df$to, "Copying2BIDS: ")
+      print_passed_time(i, df$to, start_timer, "Copying2BIDS: ")
       file.copy(df$from[i], df$to[i], overwrite = FALSE)
     }
     print(string)
