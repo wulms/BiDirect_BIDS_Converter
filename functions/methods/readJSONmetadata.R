@@ -8,9 +8,9 @@
 #' @examples index_jsons("BIDS/sourcedata")
 index_jsons <- function(path) {
   # print("Indexing JSON files")
-  start <- start_time()
+  start_timer <- Sys.time()
   json <- list.files(path = paste0(path), pattern = ".json", full.names = FALSE, recursive = TRUE, include.dirs = TRUE  ) 
-  measure_time(1, 1, start, "Indexing")
+  print_passed_time(1, 1, start_timer, "Indexing")
   return(json)
 }
 
@@ -24,11 +24,11 @@ index_jsons <- function(path) {
 #' @examples get_json_headers(list_of_jsons)
 get_json_headers <- function(json, working_dir) {
   setwd(working_dir)
-  start <- start_time()
+  start_timer <- Sys.time()
   mri_properties <- vector()
   str(mri_properties)
   for (i in 1:length(json)) {
-    measure_time(i, json, start, "Extraction of Headers: ")
+    print_passed_time(i, json, start_timer, "Extraction of Headers: ")
     # Reading json headers
     mri_properties_new <- names(rjson::fromJSON(file = json[i]))
     mri_properties <- union(mri_properties, mri_properties_new)
@@ -58,9 +58,9 @@ read_json_headers <- function(json, empty_df) {
     print("Delete file")
     file.remove(variables_environment$files$diagnostic$metadata)
   }
-  start <- start_time()
+  start_timer <- Sys.time()
   for (i in 1:length(json)) {
-    measure_time(i, json, start, "Extracting metadata of Headers: ")
+    print_passed_time(i, json, start_timer, "Extracting metadata of Headers: ")
     result_new <- rjson::fromJSON(file = json[i], simplify = TRUE) %>% 
       lapply(paste, collapse = ", ") %>% 
       bind_rows() %>%

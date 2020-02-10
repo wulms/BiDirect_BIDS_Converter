@@ -1,5 +1,8 @@
 # install dcm2niix 
 
+#' installs dcm2niix from Chris Rordens Github Repository, also depending on OS
+#'
+#' @examples install_dcm2niix()
 install_dcm2niix <- function() {
   if (file.exists("dcm2niix") == 0) {
     os <- Sys.info()["sysname"]

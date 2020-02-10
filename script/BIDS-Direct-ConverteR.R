@@ -50,7 +50,6 @@ diagnostics$json_data <- read_metadata()
 render_asci_art("asci/LUT_sequences.txt")
 variables_user$LUT$sequences <- synchronise_lut_sequence(variables_environment$files$lut$lut_sequences)
 
-print.data.frame(variables_user$LUT$sequences)
 # BIDS path creation
 render_asci_art("asci/sequence2BIDS.txt")
 diagnostics$json_data <- apply_lut_sequence(diagnostics$json_data)

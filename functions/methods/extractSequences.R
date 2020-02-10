@@ -114,7 +114,7 @@ synchronise_lut_sequence <- function(filename){
 #'
 #' @examples
 apply_lut_sequence <- function(df){
-  print.data.frame(variables_user$LUT$sequences)
+  variables_user$LUT$sequences %>% arrange(desc(relevant), type, BIDS_sequence_ID) %>% print.data.frame()
   df <- df %>% 
     left_join(variables_user$LUT$sequences) %>% 
     mutate(group_BIDS = str_extract(subject, regex(variables_user$LUT$study_info$group_id_regex)),

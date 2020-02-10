@@ -1,6 +1,29 @@
 # copy2BIDS ---------------------------------------------------------------
 
-#' Title
+
+#' Copies files, if they don't exist in target
+#'
+#' @param from list: File source
+#' @param to list: File destination
+#' @param string Which step?
+#'
+#' @examples copy_files(path_input, path_output, "Copy files to output.")
+copy_files <- function(from, to, string){
+  df <- tibble(from = from,
+               to = to) %>%
+    filter(file.exists(to) == 0)
+  if(nrow(df) > 0) {
+    for (i in seq(df$from)) {
+      # print(paste("Copied file ", i, " of ", length(from),  " to: ", to[i]))
+      # if(file.exists(to[i]) == 0) {
+      show_file_progress(i, df$to, "Copying2BIDS: ")
+      file.copy(df$from[i], df$to[i], overwrite = FALSE)
+    }
+    print(string)
+    cat("\n\n")
+  } else {print(paste0(string, " already existing - skipped"))}  
+
+#' Prepares and copies files to BIDS
 #'
 #' @param csv_file 
 #'
@@ -35,20 +58,7 @@ copy2BIDS <- function(csv_file){
     )
   path_to_folder(csv_file_relevant$BIDS_json)
   
-  copy_files <- function(from, to, string){
-    df <- tibble(from = from,
-                 to = to) %>%
-      filter(file.exists(to) == 0)
-    if(nrow(df) > 0) {
-      for (i in seq(df$from)) {
-      # print(paste("Copied file ", i, " of ", length(from),  " to: ", to[i]))
-      # if(file.exists(to[i]) == 0) {
-        show_file_progress(i, df$to, "Copying2BIDS: ")
-        file.copy(df$from[i], df$to[i], overwrite = FALSE)
-      }
-    print(string)
-    cat("\n\n")
-    } else {print(paste0(string, " already existing - skipped"))}            }
+          }
   
   # non dwi
   copy_files(from = csv_file_relevant_non_dwi$input_json, to = csv_file_relevant_non_dwi$BIDS_json, "Copy2BIDS: non-dwi jsons")

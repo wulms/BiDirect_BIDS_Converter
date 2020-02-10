@@ -34,46 +34,14 @@ render_asci_art <- function(asci_file){
   cat(asci, sep = "\n")
 }
 
-# Time measurement --------------------------------------------------------
-
-
 #' Prints progress of files in list of files
 #'
-#' @param i 
-#' @param list 
-#' @param string 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-show_file_progress <- function(item, list_of_files, string) {
-  # cat("\014")
-  
-}
+#' @param item item in for loop
+#' @param list_of_files list, where the item comes from
+#' @param start Sys.time() of start, used to calculate the time difference
+#' @param string String, to describe the function of the loop
 
-#' Title
-#'
-#' @return
-#' @export
-#'
-#' @examples
-start_time <- function() {
-  Sys.time()
-}
-
-
-#' Title
-#'
-#' @param i 
-#' @param list 
-#' @param start 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-measure_time <- function(item, list_of_files, start, string) {
+print_passed_time <- function(item, list_of_files, start, string) {
   end <- Sys.time()
   time_difference <- difftime(end, start, unit = "mins") %>% round(2)
   time_info <- paste("Time since start: ", time_difference %>% round(0), " min.  ETA: ",  (difftime(end, start, unit = "mins")/item*length(list_of_files) - time_difference) %>% round(0), " min. remaining.")

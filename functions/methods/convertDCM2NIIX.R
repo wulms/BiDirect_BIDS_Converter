@@ -38,20 +38,20 @@ dcm2nii_wrapper <-   function(input_folder, output_folder, scanner_type, dcm2nii
 #' @examples
 #' dcm2nii_converter("dcm2niix -o nii/session-id/participant-id/ -ba y -f %d -z y root_folder/session_id/participant_id/")
 dcm2nii_converter <- function(list, output_folder){
-  start_timer <- start_time()
+  start_timer <- Sys.time()
   for (i in seq_along(list)) {
     done_file <- paste0(output_folder[i], "/done.txt")
     if (file.exists(done_file) == 0) {
       cat("/n")
       dir.create(output_folder[i], recursive = TRUE, showWarnings = FALSE)
-      measure_time(i, list, start_timer, "dcm2niix (by Chris Rorden) conversion: ")
+      print_passed_time(i, list, start_timer, "dcm2niix (by Chris Rorden) conversion: ")
       system(list[i])
       write_file("done", done_file)
     } else if (file.exists(done_file) == 1) {
       print("Skipped: Subject already processed - folder contains done.txt")
     }
   }
-  measure_time(i, list, start_timer, "dcm2niix (by Chris Rorden) conversion: ")
+  print_passed_time(i, list, start_timer, "Total:  ")
   print("===================================")
   print("Congratulation - the conversion was successful.")
 }

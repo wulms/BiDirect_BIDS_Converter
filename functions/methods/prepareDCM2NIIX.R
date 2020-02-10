@@ -73,12 +73,10 @@ clean_foldernames <- function(df,
 #' @examples
 check_subject_nomenclature <- function(subjects_BIDS, subject_regex) {
   if (any(str_detect(subjects_BIDS, paste0("^", subject_regex, "$"), negate = TRUE))) {
-
     write_csv(diagnostics$dcm2nii_paths, variables_environment$files$diagnostic$dcm2niix_paths)
     cat("\n\n")
     print(paste("Implausible subjects_BIDS found - look into file: ", variables_environment$files$diagnostic$dcm2niix_paths))
     print(paste("Your subject-regex:", paste0("^", subject_regex, "$")))
-    #print(paste("Your remove-regex:"), variables_user$LUT$study_info$remove_pattern_regex)
     print(paste("Your pattern-regex:", variables_user$LUT$study_info$remove_pattern_regex))
     cat("\n\n")
     diagnostics$dcm2nii_paths %>%
@@ -95,14 +93,11 @@ check_subject_nomenclature <- function(subjects_BIDS, subject_regex) {
 }
 
 
-#' Title
+#' Finds unqiue session-ids and adds them to the lut_session.csv
 #'
 #' @param dicom_folder 
 #'
-#' @return
-#' @export
-#'
-#' @examples
+#' @return Appends the identified session-ids to the lut_session.csv
 mapping_dicoms <- function(dicom_folder) {
   dicoms_mapping <<- list_dicom_folders(dicom_folder)
   variables_user$folder$dicoms <<- dicoms_mapping
