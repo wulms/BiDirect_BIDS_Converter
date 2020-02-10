@@ -103,7 +103,7 @@ Column {data-width=50}
   
   ### Folders
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 folder_count <- length(dicoms) %>% round(0)
 
 valueBox(folder_count, 
@@ -174,7 +174,7 @@ Column {data-width=150}
   
   ### Plausible Base 
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 
 hchart(plausible_base$bids_type, "column")
 ```
@@ -203,7 +203,7 @@ Column {data-width=150}
   
   ### Overview of JSONS per participant and survey of base_protocol
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 
 json_meta_all2 %>%
   ungroup() %>%
@@ -255,7 +255,7 @@ Column {data-width=250}
   
   
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 DT::datatable(dicoms_mapping,
               caption = 'Table 1: This is the old and the new foldername (where the converted files are saved).',
               colnames = c('DICOM folder' = 1, "NIfTI" = 2),
@@ -270,7 +270,7 @@ Column {data-width=150}
   
   ### Removed appendices - these are removed from the filenames to enable a clean structure in the subject folders
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 dicoms_mapping %>%
   select(dicoms) %>%
   mutate(dicoms = str_remove_all(dicoms, "DICOM/|Baseline/|FollowUp/|FollowUp2/|FollowUp3/|FollowUp2_(p|P)lus/|FollowUp3_(p|P)lus/") %>%
@@ -298,9 +298,9 @@ dicoms_mapping %>%
 Column {data-width=200}
 -----------------------------------------------------------------------
   
-  ### Summary table per survey and cohort
+### Summary table per survey and cohort
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 
 
 dicoms_mapping %>%
@@ -337,7 +337,7 @@ Column {data-width=150}
   
   ### JSON mapping (sequence name vs BIDS name) - Base - plausible sequences (include / keep)
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 json_meta_all2 %>%
   ungroup() %>%
   filter(str_detect(plus, "plus") == 0) %>%
@@ -375,7 +375,7 @@ Column {data-width=150}
   
   ### JSON mapping (sequence name vs BIDS name) - implausible sequences (exclude / delete)
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 json_meta_all2 %>%
   ungroup() %>%
   filter(str_detect(bids_type, "implausible") == 1) %>%
@@ -399,7 +399,7 @@ Duplicates
   
   ### Duplicates based on BIDS type
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 json_meta_all2 %>%
   select(subject, session, bids_type) %>%
   group_by_all() %>% count() %>% filter(n != 1 & n != 7) %>%
@@ -428,7 +428,7 @@ Column {data-width=250}
   
   ### Duplicate sequences (no unique filename) - empty is good!
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 json_meta_all2 %>%
   select(new_nii3) %>%
   group_by_all() %>%
@@ -449,7 +449,7 @@ Column {data-width=150}
   
   ### ID differences (filename, PatientID, PatientName) - empty is good!
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 
 json_meta_all2 %>%
   select(subject, PatientID, PatientName) %>% unique() %>%
@@ -541,7 +541,7 @@ Column
   
   ### T1w
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 json_meta_all2 %>%
   filter(str_detect(bids_type, "implausible") == 0) %>%
   filter(str_detect(bids_type, "T1w") == 1) %>%
@@ -718,7 +718,7 @@ MRI parameters - Plus
   
   ### T1w highres
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 json_meta_all2 %>%
   filter(str_detect(bids_type, "implausible") == 0) %>%
   filter(str_detect(bids_type, "T1w_highres") == 1) %>%
@@ -835,9 +835,9 @@ MRI parameters - implausible
   Column
 ------------------------
   
-  ### T1w
+### T1w
   
-  ```{r echo=FALSE}
+```{r echo=FALSE}
 json_meta_all2 %>%
   filter(str_detect(bids_type, "implausible") == 1) %>%
   filter(str_detect(bids_type, "T1w") == 1) %>%

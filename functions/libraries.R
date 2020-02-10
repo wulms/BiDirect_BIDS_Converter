@@ -1,5 +1,5 @@
 
-packages <- c("tidyverse", "stringi", "lubridate", "rjson")
+packages <- c("tidyverse", "stringi", "lubridate", "rjson", "flexdashboard", "knitr", "DT", "plotly")
 
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(packages, character.only = TRUE)

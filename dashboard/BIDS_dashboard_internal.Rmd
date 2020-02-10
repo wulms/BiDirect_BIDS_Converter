@@ -1,0 +1,457 @@
+---
+params:
+  df: "DataFrame"
+  study: "StudyInfo"
+  wd: "working_dir"
+  pattern_to_remove: "pattern"
+title: "`r params$study`"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(rjson)
+library(DT)
+library(plotly)
+library(knitr)
+
+source("dashboard_functions.R")
+
+knitr::opts_knit$set(root.dir = params$wd)
+```
+
+```{r}
+# js <- list(
+#   CHANGES = "sourcedata/CHANGES",
+#   dataset_description = "sourcedata/dataset_description.json",
+#   README = "sourcedata/README"
+# )
+
+metadata_dataset <- fromJSON(file = "sourcedata/dataset_description.json")
+```
+
+Summary
+===========================================================================
+
+Raw infos {data-width=200}
+--------------------------------------------------------------------------
+
+### Overvoew
+
+#### Subjects 
+`r params$df %>% select(subject) %>% unique() %>% count() %>% kable()`
+#### Sessions
+`r params$df %>% count(session)  %>% kable()` 
+#### Sequences
+`r params$df %>% count(relevant)  %>% kable()`
+#### Relevant
+`r params$df %>% filter(relevant == 1) %>% count(sequence)  %>% kable()`  
+#### Irrelevant
+`r params$df %>% filter(relevant == 0) %>% count(sequence)  %>% kable()`
+#### Scanner information
+`r params$df %>% count(ManufacturersModelName)  %>% kable()`  
+`r params$df %>% count(Modality)   %>% kable()`  
+`r params$df %>% count(MagneticFieldStrength)   %>% kable()` 
+`r params$df %>% count(DeviceSerialNumber)   %>% kable()`  
+`r params$df %>% count(SoftwareVersions)   %>% kable()`  
+`r params$df %>% count(StationName) %>% kable()` 
+`r params$df %>% count(InstitutionalDepartmentName)  %>% kable()`  
+`r params$df %>% count(InstitutionName)  %>% kable()`  
+ 
+
+Study Summary {data-width=450}
+-----------------------------------------------------------------------
+
+### Dataset Information
+
+__Authors:__ `r metadata_dataset$Authors`  
+__Funding:__ `r metadata_dataset$Funding`  
+__How to acknowledge:__ `r metadata_dataset$HowToAcknowledge`  
+__License__: `r metadata_dataset$License`  
+__References and Links:__ `r metadata_dataset$ReferencesAndLinks`  
+__BIDS Version:__ `r metadata_dataset$BIDSVersion`  
+
+
+### Chart A
+
+```{r}
+diagnostics$json_data %>% 
+    df_select_n %>% 
+  plot_bar()
+
+
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Relevant sequences
+
+```{r}
+params$df %>% 
+  df_select_n() %>%
+  filter(relevant == 1) %>% select(-relevant) %>%
+  spread(. ,session, value = n) %>%
+  datatable_setting()
+```
+
+### Irrelevant sequences
+
+```{r}
+params$df %>% 
+  df_select_n() %>%
+  filter(relevant == 0) %>% select(-relevant) %>%
+  spread(. ,session, value = n) %>%
+  datatable_setting()
+```
+
+Group-summary
+=================================================================
+
+Column {data-width=700}
+---------------------------------------------
+### Group plot
+
+```{r}
+p <-params$df %>%
+      df_select_n_group() %>% 
+      ggplot(aes(x = session, y = n, fill = PatientSex)) + 
+      geom_bar(position="stack", stat = "identity") + 
+      theme_minimal() +
+      facet_wrap(type ~ sequence_BIDS + group_BIDS, nrow = 2, labeller = label_both) +
+    ggtitle("Barplots of n=Sequence , split by session-id and group-id")
+
+
+ggplotly(p)
+```
+
+Column {data-widht=300}
+--------------------------------------------------
+
+### Group table
+
+```{r}
+params$df %>% 
+    df_select_n_group() %>% 
+  select(-relevant) %>%
+  spread(session, n) %>%
+  datatable_setting()
+```
+
+Subjects-summary
+==============================================================
+
+Column {data-width=1000}
+---------------------------------------------------------------
+
+### All
+```{r}
+
+sessions <- diagnostics$json_data$session %>% n_distinct()
+
+calculate_comp_subjects <- function(df) {
+  df <- df %>% 
+    select(subject, session, group_BIDS, sequence_BIDS, relevant) %>% 
+    filter(relevant == 1) %>% 
+    select(-relevant) %>% 
+    group_by_all() %>% 
+    count() %>% 
+    ungroup %>% 
+    spread(session, n) %>% 
+    mutate("RatioCompleteSurveys" = rowSums(select(., contains("ses-")), na.rm = TRUE)/sessions) %>%
+    group_by(subject) %>%
+    mutate("RatioCompleteSubjects" = mean(RatioCompleteSurveys)) %>%
+    ungroup()
+  return(df)
+}
+
+params$df  %>%
+  calculate_comp_subjects() %>%
+  datatable_setting()
+
+
+```
+
+
+JSON Metadata
+=================================================================
+
+Column {data-widht=500}
+
+### JSON Metadata
+
+```{r}
+params$df %>% 
+  datatable_setting()
+```
+
+Age-distribution
+========================================================================
+
+Column {data-widht=500}
+--------------------------------------------------
+
+### Boxplots
+
+```{r}
+p <-params$df %>% 
+  df_select_patient_info() %>% 
+  ggplot(aes(x = session, y = Age)) +
+  geom_boxplot() +
+  facet_wrap(. ~ group_BIDS, labeller = label_both) +
+  ggtitle("Boxplots of Age, split by session-id and group-id")
+ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+```
+
+### Boxplots split by gender
+
+
+```{r}
+p <- params$df %>% 
+  df_select_patient_info() %>% 
+  ggplot(aes(x = session, y = Age, fill = PatientSex)) +
+  geom_boxplot() +
+  facet_wrap(. ~ group_BIDS, labeller = label_both) +
+  ggtitle("Boxplots of Age and Sex, split by session-id and group-id")
+ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+
+```
+
+Column {data-widht=500}
+--------------------------------------------------
+
+### Statistics
+
+```{r}
+params$df %>% 
+  df_select_patient_info() %>%
+  group_by(session, group_BIDS) %>% 
+  summarize(mean = mean(Age),
+            median = median(Age),
+            sd = sd(Age),
+            var = var(Age),
+            iqr = IQR(Age),
+            n = n()) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  select(session, n, everything()) %>%
+  datatable_setting()
+```
+
+### Statistics
+
+```{r}
+params$df %>% 
+  df_select_patient_info() %>%
+  group_by(session, PatientSex, group_BIDS) %>% 
+  summarize(mean = mean(Age),
+            median = median(Age),
+            sd = sd(Age),
+            var = var(Age),
+            iqr = IQR(Age),
+            n = n()) %>%
+  select(session, PatientSex, n, everything()) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  datatable_setting()
+```
+
+Weight-distribution
+========================================================================
+
+Column {data-widht=500}
+--------------------------------------------------
+
+### Boxplots
+
+```{r}
+p <-params$df %>% 
+  df_select_patient_info() %>% 
+  ggplot(aes(x = session, y = PatientWeight)) +
+  geom_boxplot() +
+  facet_wrap(. ~ group_BIDS, labeller = label_both) +
+  ggtitle("Boxplots of Weight, split by session-id and group-id")
+
+ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+```
+
+### Boxplots split by gender
+
+
+```{r}
+p <- params$df %>% 
+  df_select_patient_info() %>% 
+  ggplot(aes(x = session, y = PatientWeight, fill = PatientSex)) +
+  geom_boxplot()+
+  facet_wrap(. ~ group_BIDS, labeller = label_both) +
+  ggtitle("Boxplots of Weight and Sex, split by session-id and group-id")
+ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+
+```
+
+Column {data-widht=500}
+--------------------------------------------------
+
+### Statistics
+
+```{r}
+params$df %>% 
+  df_select_patient_info() %>%
+  group_by(session, group_BIDS) %>% 
+  summarize(mean = mean(PatientWeight),
+            median = median(PatientWeight),
+            sd = sd(PatientWeight),
+            var = var(PatientWeight),
+            iqr = IQR(PatientWeight),
+            n = n()) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  select(session, n, everything()) %>%
+  datatable_setting()
+```
+
+### Statistics
+
+```{r}
+params$df %>% 
+  df_select_patient_info() %>%
+  group_by(session, PatientSex, group_BIDS) %>% 
+  summarize(mean = mean(PatientWeight),
+            median = median(PatientWeight),
+            sd = sd(PatientWeight),
+            var = var(PatientWeight),
+            iqr = IQR(PatientWeight),
+            n = n()) %>%
+  mutate_if(is.numeric, round, digits = 2) %>%
+  select(session, PatientSex, n, everything()) %>%
+  datatable_setting()
+```
+
+QC: Metadata
+===========================================================================
+
+These tables could indicate implausibilities (like errors in ID), based on entrys, that contain sensitive information on the subject.  
+
+Column {data.width = 500}
+--------------------------------------------------------
+
+### ID changes - Shapeshifters
+
+```{r}
+clean_string <- function(input, pattern) {
+  library(stringr)
+  input %>%
+    str_remove_all(pattern) %>%
+    str_remove_all("[:punct:]+") %>%
+    str_remove_all(params$pattern_to_remove)
+}
+
+
+
+params$df %>%
+  select(session, subject, PatientID, PatientName) %>%
+  mutate(
+    subject = str_remove(subject, "sub-"),
+    PatientID = clean_string(PatientID, subject),
+    PatientName = clean_string(PatientName, subject)
+  ) %>%
+  filter(PatientID != "" | PatientName != "") %>%
+  unique() %>%
+  datatable_setting()
+```
+
+### Birthdata changes - Reincarnated
+
+```{r}
+params$df %>%
+  select(subject, PatientBirthDate) %>%
+  unique() %>%
+  count(subject) %>% filter(n > 1) %>%
+  left_join(params$df) %>%
+  select(subject, session, AcquisitionDateTime, PatientBirthDate) %>%
+  mutate(AcquisitionDateTime = as.Date(AcquisitionDateTime)) %>%
+  unique() %>%
+  group_by(subject) %>%
+  mutate(
+    Age = difftime(AcquisitionDateTime, PatientBirthDate) %>% time_length("years") %>% round(1),
+    BirthDateDiff = difftime(PatientBirthDate, lag(PatientBirthDate)) %>% time_length("years") %>% round(1)
+  ) %>%
+  datatable_setting()
+
+```
+
+Column {data.width = 500}
+-----------------------------------------------------------
+
+### Sex changes - Clownfishes
+
+```{r}
+params$df %>%
+  select(subject, PatientSex) %>%
+  unique() %>%
+  count(subject) %>% filter(n > 1) %>%
+  left_join(params$df) %>%
+  select(subject, session, PatientSex) %>% unique() %>%
+  datatable_setting()
+      
+    
+  
+```
+
+### Two acquisition dates at same session id - Time travellers
+
+```{r}
+params$df %>%
+  select(subject, session, AcquisitionDateTime) %>%
+  mutate(AcquisitionDateTime = as.Date(AcquisitionDateTime)) %>%
+  unique() %>%
+  group_by(subject) %>%
+  count(session) %>% filter(n > 1) %>%
+  datatable_setting()
+```
+
+QC: Sequence selection
+===========================================================================
+
+```{r}
+params$df %>%
+  select(type, relevant, sequence, SeriesDescription, ProtocolName) %>%
+  group_by_all() %>%
+  count() %>%
+  select(type, relevant, n, everything()) %>%
+  datatable_setting()
+
+
+```
+
+QC: Duplicates
+==========================================================================
+
+```{r}
+params$df %>%
+  select(subject, session, sequence) %>% 
+  group_by_all () %>% 
+  count() %>% 
+  filter(n > 1) %>%
+  left_join(params$df) %>% 
+  select(subject, session, sequence, BIDS_json) %>% 
+  unique() %>%
+  datatable_setting()
+```
+
+QC: Settings - anat
+===================================================================================
+
+```{r}
+params$df %>%
+  filter(type == "anat") %>%
+  filter(relevant == "1") %>%
+  mutate(sequence_BIDS = as.factor(sequence_BIDS)) %>%
+  show_settings() %>%
+  datatable_setting()
+  
+```
+
+

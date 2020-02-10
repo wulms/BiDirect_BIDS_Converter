@@ -22,6 +22,7 @@ copy_files <- function(from, to, string){
     print(string)
     cat("\n\n")
   } else {print(paste0(string, " already existing - skipped"))}  
+}
 
 #' Prepares and copies files to BIDS
 #'
@@ -57,8 +58,6 @@ copy2BIDS <- function(csv_file){
            BIDS_bvec = str_replace(BIDS_json, ".json", ".bvec")
     )
   path_to_folder(csv_file_relevant$BIDS_json)
-  
-          }
   
   # non dwi
   copy_files(from = csv_file_relevant_non_dwi$input_json, to = csv_file_relevant_non_dwi$BIDS_json, "Copy2BIDS: non-dwi jsons")

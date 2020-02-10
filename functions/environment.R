@@ -76,6 +76,7 @@ variables_environment$files = list(
   ),
   # Dashboards for internal and external use
   dashboards = list(
+  "internal_rmd" = paste0(getwd(), "/dashboard/BIDS_dashboard_internal.Rmd"),
   "internal_use" = paste0(variables_environment$directories$optional$dashboards, "/dashboard_internal_use.html"),
   "external_use" = paste0(variables_environment$directories$optional$dashboards, "/dashboard_external_use.html")
   )
