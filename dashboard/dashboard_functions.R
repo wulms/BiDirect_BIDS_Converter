@@ -88,7 +88,7 @@ show_settings <- function(df) {
       -ImageOrientationPatientDICOM,
       -ImageType,
       -ProcedureStepDescription,
-      -AccessionNumber,
+   #   -AccessionNumber,
       -StudyID,
       -StudyInstanceUID,
       -SeriesNumber,
@@ -102,7 +102,7 @@ show_settings <- function(df) {
       -PatientSex,
       -PatientName,
       -PatientWeight,
-      -PhilipsRescaleSlope
+#      -PhilipsRescaleSlope
     ) %>%
     mutate_if(is.numeric, round, digits = 2) %>%
     group_by_all() %>%
