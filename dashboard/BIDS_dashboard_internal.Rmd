@@ -127,7 +127,7 @@ p <-params$df %>%
     ggtitle("Barplots of n=Sequence , split by session-id and group-id") 
 
 
-ggplotly(p)
+ggplotly(p) %>% layout(margin = list(l = 100, r = 20, b = 50, t = 100))
 ```
 
 Column {data-widht=300}
@@ -206,7 +206,7 @@ p <-params$df %>%
   geom_boxplot() +
   facet_wrap(. ~ group_BIDS, labeller = label_both) +
   ggtitle("Boxplots of Age, split by session-id and group-id")
-ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+ggplotly(p) %>% layout(margin = list(l = 100, r = 20, b = 10, t = 100))
 ```
 
 ### Boxplots split by gender
@@ -219,7 +219,7 @@ p <- params$df %>%
   geom_boxplot() +
   facet_wrap(. ~ group_BIDS, labeller = label_both) +
   ggtitle("Boxplots of Age and Sex, split by session-id and group-id")
-ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+ggplotly(p) %>% layout(margin = list(l = 100, r = 20, b = 10, t = 100))
 
 ```
 
@@ -276,7 +276,7 @@ p <-params$df %>%
   facet_wrap(. ~ group_BIDS, labeller = label_both) +
   ggtitle("Boxplots of Weight, split by session-id and group-id")
 
-ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+ggplotly(p)  %>% layout(margin = list(l = 100, r = 20, b = 10, t = 100))
 ```
 
 ### Boxplots split by gender
@@ -289,7 +289,7 @@ p <- params$df %>%
   geom_boxplot()+
   facet_wrap(. ~ group_BIDS, labeller = label_both) +
   ggtitle("Boxplots of Weight and Sex, split by session-id and group-id")
-ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+ggplotly(p)  %>% layout(margin = list(l = 100, r = 20, b = 10, t = 100))
 
 ```
 

@@ -59,7 +59,7 @@ plot_bar <- function(df){
     ggtitle("Barplots of n=Sequence, split by session-id and relevance")
   
   
-  ggplotly(p) %>% layout(margin = list(l = 75, b =50))
+  ggplotly(p) %>% layout(margin = list(l = 100, r = 20, b = 50, t = 100))
 }
 
 
