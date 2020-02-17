@@ -4,7 +4,7 @@
 #'
 #' @examples install_dcm2niix()
 install_dcm2niix <- function() {
-  if (file.exists("dcm2niix") == 0) {
+  if (length(list.files(pattern = "dcm2niix")) == 0) {
     os <- Sys.info()["sysname"]
     if (os == "Darwin") {
       message("Identified MacOs. Not officially supported!")
@@ -16,7 +16,7 @@ install_dcm2niix <- function() {
       dcm2niix <-
         "https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20190902/dcm2niix_lnx.zip"
     }
-    else if (os == "windows") {
+    else if (os == "Windows") {
       message("Identified windows.")
       dcm2niix <-
         "https://github.com/rordenlab/dcm2niix/releases/download/v1.0.20190902/dcm2niix_win.zip"
