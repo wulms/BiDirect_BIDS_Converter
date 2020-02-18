@@ -201,8 +201,9 @@ Column {data-width=500}
 params$df %>% 
    df_select_patient_info() %>% 
    ggplot(aes(x = PatientSex, y = Age, fill = PatientSex)) +
-  geom_flat_violin(aes(fill = PatientSex), position = position_nudge(x = .1, y = 0), 
-                       adjust = 1.5, trim = FALSE, alpha = .5) +
+   geom_flat_violin(aes(fill = PatientSex), position = position_nudge(x = .25, y = 0), 
+                       adjust = .5, trim = FALSE, alpha = .5) +
+  geom_point(position = position_jitter(width = .15), size = .25, alpha = 0.25) +
   geom_boxplot(aes(x = PatientSex, y = Age, fill = PatientSex), 
                outlier.shape = NA, alpha = .5, width = .5, colour = "black") +
    facet_grid(group_BIDS ~ session, labeller = label_both, scales = "free") +
@@ -252,8 +253,9 @@ Column {data-width=500}
 params$df %>% 
    df_select_patient_info() %>% 
    ggplot(aes(x = PatientSex, y = PatientWeight, fill = PatientSex)) +
-  geom_flat_violin(aes(fill = PatientSex), position = position_nudge(x = .1, y = 0), 
-                       adjust = 1.5, trim = FALSE, alpha = .5) +
+  geom_flat_violin(aes(fill = PatientSex), position = position_nudge(x = .25, y = 0), 
+                       adjust = .5, trim = FALSE, alpha = .5) +
+  geom_point(position = position_jitter(width = .15), size = .25, alpha = 0.25) +
   geom_boxplot(aes(x = PatientSex, y = PatientWeight, fill = PatientSex), 
                outlier.shape = NA, alpha = .5, width = .5, colour = "black") +
    facet_grid(group_BIDS ~ session, labeller = label_both, scales = "free") +
