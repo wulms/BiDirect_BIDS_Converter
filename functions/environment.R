@@ -6,6 +6,8 @@
 print("Setup of variables: ")
 
 
+os <- Sys.info()["sysname"]
+
 variables_environment <- list(
   directories = list(
     setup = list("working_dir" = args,

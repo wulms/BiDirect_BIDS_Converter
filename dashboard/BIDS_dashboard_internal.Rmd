@@ -18,6 +18,7 @@ library(rjson)
 library(DT)
 library(plotly)
 library(knitr)
+library(patchwork)
 
 source("dashboard_functions.R")
 
@@ -81,10 +82,7 @@ __BIDS Version:__ `r metadata_dataset$BIDSVersion`
 ```{r}
 diagnostics$json_data %>% 
     df_select_n %>% 
-  plot_bar()
-
-
-
+  plot_bar() 
 ```
 
 Column {data-width=350}
@@ -119,15 +117,18 @@ Column {data-width=700}
 
 ```{r}
 p <-params$df %>%
-      df_select_n_group() %>% 
-      ggplot(aes(x = session, y = n, fill = PatientSex)) + 
-      geom_bar(position="stack", stat = "identity") + 
-      theme_minimal() +
-      facet_wrap(type ~ sequence_BIDS + group_BIDS, nrow = 2, labeller = label_both) +
-    ggtitle("Barplots of n=Sequence , split by session-id and group-id") 
+    df_select_n_group() %>% 
+    ggplot(aes(x = sequence_BIDS, y = n, fill = PatientSex)) + 
+    geom_bar(position="stack", stat = "identity") + 
+    theme_minimal() +
+    facet_grid(session ~ group_BIDS 
+               #ncol = length(unique(diagnostics$json_data$group_BIDS))
+               ) +
+    ggtitle("Barplots of n=Sequence , split by session-id and group-id") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+ggplotly(p) %>% layout(margin = list(l = 100, r = 100, b = 100, t = 100))
 
-ggplotly(p) %>% layout(margin = list(l = 100, r = 20, b = 50, t = 100))
 ```
 
 Column {data-widht=300}
@@ -178,70 +179,40 @@ params$df  %>%
 ```
 
 
-JSON Metadata
-=================================================================
-
-Column {data-width=1000}
------------------------
-
-### JSON Metadata
-
-```{r}
-params$df %>% 
-  datatable_setting()
-```
-
 Age-distribution
 ========================================================================
 
 Column {data-width=500}
 --------------------------------------------------
 
-### Boxplots
-
-```{r}
-p <-params$df %>% 
-  df_select_patient_info() %>% 
-  ggplot(aes(x = session, y = Age)) +
-  geom_boxplot() +
-  facet_wrap(. ~ group_BIDS, labeller = label_both) +
-  ggtitle("Boxplots of Age, split by session-id and group-id")
-ggplotly(p) %>% layout(margin = list(l = 100, r = 20, b = 10, t = 100))
-```
-
 ### Boxplots split by gender
 
 
 ```{r}
-p <- params$df %>% 
-  df_select_patient_info() %>% 
-  ggplot(aes(x = session, y = Age, fill = PatientSex)) +
-  geom_boxplot() +
-  facet_wrap(. ~ group_BIDS, labeller = label_both) +
-  ggtitle("Boxplots of Age and Sex, split by session-id and group-id")
-ggplotly(p) %>% layout(margin = list(l = 100, r = 20, b = 10, t = 100))
+# p <- params$df %>% 
+#   df_select_patient_info() %>% 
+#   ggplot(aes(x = group_BIDS, y = Age, fill = as.factor(PatientSex))) +
+#   geom_boxplot() +
+#   facet_wrap(. ~ session, labeller = label_both) +
+#   ggtitle("Boxplots of Age and Sex, split by session-id and group-id")
+# ggplotly(p) %>% layout(margin = list(l = 100, r = 100, b = 100, t = 100),
+#                        boxmode = "group")
 
+params$df %>% 
+   df_select_patient_info() %>% 
+   ggplot(aes(x = PatientSex, y = Age, fill = PatientSex)) +
+  geom_flat_violin(aes(fill = PatientSex), position = position_nudge(x = .1, y = 0), 
+                       adjust = 1.5, trim = FALSE, alpha = .5) +
+  geom_boxplot(aes(x = PatientSex, y = Age, fill = PatientSex), 
+               outlier.shape = NA, alpha = .5, width = .5, colour = "black") +
+   facet_grid(group_BIDS ~ session, labeller = label_both, scales = "free") +
+   ggtitle("Boxplots of Age and Sex, split by session-id and group-id") +
+ coord_flip() +
+  theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 Column {data-width=500}
 --------------------------------------------------
-
-### Statistics
-
-```{r}
-params$df %>% 
-  df_select_patient_info() %>%
-  group_by(session, group_BIDS) %>% 
-  summarize(mean = mean(Age),
-            median = median(Age),
-            sd = sd(Age),
-            var = var(Age),
-            iqr = IQR(Age),
-            n = n()) %>%
-  mutate_if(is.numeric, round, digits = 2) %>%
-  select(session, n, everything()) %>%
-  datatable_setting()
-```
 
 ### Statistics
 
@@ -266,52 +237,33 @@ Weight-distribution
 Column {data-width=500}
 --------------------------------------------------
 
-### Boxplots
-
-```{r}
-p <-params$df %>% 
-  df_select_patient_info() %>% 
-  ggplot(aes(x = session, y = PatientWeight)) +
-  geom_boxplot() +
-  facet_wrap(. ~ group_BIDS, labeller = label_both) +
-  ggtitle("Boxplots of Weight, split by session-id and group-id")
-
-ggplotly(p)  %>% layout(margin = list(l = 100, r = 20, b = 10, t = 100))
-```
-
 ### Boxplots split by gender
 
-
 ```{r}
-p <- params$df %>% 
-  df_select_patient_info() %>% 
-  ggplot(aes(x = session, y = PatientWeight, fill = PatientSex)) +
-  geom_boxplot()+
-  facet_wrap(. ~ group_BIDS, labeller = label_both) +
-  ggtitle("Boxplots of Weight and Sex, split by session-id and group-id")
-ggplotly(p)  %>% layout(margin = list(l = 100, r = 20, b = 10, t = 100))
+# p <- params$df %>% 
+#   df_select_patient_info() %>% 
+#   ggplot(aes(x = group_BIDS, y = PatientWeight), fill = as.factor(PatientSex)) +
+#   geom_boxplot(position = position_dodge2(preserve = "total")) +
+#   facet_wrap(. ~ session, labeller = label_both) +
+#   ggtitle("Boxplots of Age and Sex, split by session-id and group-id")
+# ggplotly(p) %>% layout(margin = list(l = 100, r = 100, b = 100, t = 100),
+#                        boxmode = "group")
 
+params$df %>% 
+   df_select_patient_info() %>% 
+   ggplot(aes(x = PatientSex, y = PatientWeight, fill = PatientSex)) +
+  geom_flat_violin(aes(fill = PatientSex), position = position_nudge(x = .1, y = 0), 
+                       adjust = 1.5, trim = FALSE, alpha = .5) +
+  geom_boxplot(aes(x = PatientSex, y = PatientWeight, fill = PatientSex), 
+               outlier.shape = NA, alpha = .5, width = .5, colour = "black") +
+   facet_grid(group_BIDS ~ session, labeller = label_both, scales = "free") +
+   ggtitle("Boxplots of Weight and Sex, split by session-id and group-id") +
+ coord_flip() +
+  theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 Column {data-width=500}
 --------------------------------------------------
-
-### Statistics
-
-```{r}
-params$df %>% 
-  df_select_patient_info() %>%
-  group_by(session, group_BIDS) %>% 
-  summarize(mean = mean(PatientWeight),
-            median = median(PatientWeight),
-            sd = sd(PatientWeight),
-            var = var(PatientWeight),
-            iqr = IQR(PatientWeight),
-            n = n()) %>%
-  mutate_if(is.numeric, round, digits = 2) %>%
-  select(session, n, everything()) %>%
-  datatable_setting()
-```
 
 ### Statistics
 
@@ -327,6 +279,23 @@ params$df %>%
             n = n()) %>%
   mutate_if(is.numeric, round, digits = 2) %>%
   select(session, PatientSex, n, everything()) %>%
+  datatable_setting()
+```
+
+
+QC: Subject data
+=================================================================
+
+Column {data-width=1000}
+-----------------------
+
+### JSON Metadata
+
+```{r}
+params$df %>% 
+  filter(relevant == 1) %>%
+  df_select_patient_info2() %>%
+  unique() %>%
   datatable_setting()
 ```
 
@@ -346,7 +315,7 @@ clean_string <- function(input, pattern) {
   input %>%
     str_remove_all(pattern) %>%
     str_remove_all("[:punct:]+") %>%
-    str_remove_all(params$pattern_to_remove)
+    str_remove_all(regex(params$pattern_to_remove, ignore_case = TRUE))
 }
 
 
@@ -432,12 +401,13 @@ QC: Duplicates
 
 ```{r}
 params$df %>%
-  select(subject, session, sequence) %>% 
+  filter(relevant == 1) %>%
+  select(subject, session, sequence_BIDS) %>% 
   group_by_all () %>% 
   count() %>% 
   filter(n > 1) %>%
   left_join(params$df) %>% 
-  select(subject, session, sequence, BIDS_json) %>% 
+  select(subject, session, sequence, input_json, BIDS_json) %>% 
   unique() %>%
   datatable_setting()
 ```

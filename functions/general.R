@@ -42,6 +42,15 @@ render_asci_art <- function(asci_file){
 #' @param string String, to describe the function of the loop
 
 print_passed_time <- function(item, list_of_files, start, string) {
+  if(item %% 10 == 0){
+    if(os == "Windows"){
+      #system("cls")
+      cat("\014")
+    } else {
+      #system("clear")
+      cat("\014")
+    }
+  }
   end <- Sys.time()
   time_difference <- difftime(end, start, unit = "mins") %>% round(2)
   time_info <- paste("Time since start: ", time_difference %>% round(0), " min.  ETA: ",  (difftime(end, start, unit = "mins")/item*length(list_of_files) - time_difference) %>% round(0), " min. remaining.")
