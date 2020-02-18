@@ -2,7 +2,7 @@
 #setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
 
 
-args = "/mnt/TB8Drive/bidirect2bids/"
+# args = "/mnt/TB8Drive/bidirect2bids/"
 
 ## general setup
 source("functions/functions.R")
