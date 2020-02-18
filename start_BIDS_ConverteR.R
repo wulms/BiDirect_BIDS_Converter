@@ -6,7 +6,7 @@ if (length(args)==0) {
   stop("At least one argument must be supplied (input directory of your study, containing 'dicom/session/subject' folders", call.=FALSE)
 } 
 
-source("script/BIDS-Direct-ConverteR.R")
+source(paste0(getwd(), "/script/BIDS-Direct-ConverteR.R"))
 
 
 
