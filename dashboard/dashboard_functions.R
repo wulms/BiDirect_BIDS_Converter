@@ -1,3 +1,9 @@
+#' Settings for DT
+#'
+#' @param df dataframe
+#'
+#' @return datatable object
+#' @examples datatable_setting(mtcars)
 datatable_setting <- function(df) {
   DT::datatable(
     df,
@@ -16,18 +22,8 @@ datatable_setting <- function(df) {
   )
 }
 
-# Check if required packages are installed ----
-packages <- c("cowplot", "readr", "ggplot2", "dplyr", "lavaan", "smooth", "Hmisc")
-if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
-  install.packages(setdiff(packages, rownames(installed.packages())))
-}
-
-# Load packages ----
-library(ggplot2)
-
-# Defining the geom_flat_violin function ----
-# Note: the below code modifies the
-# existing github page by removing a parenthesis in line 50
+# geom_flat_violin function -----------------------------------------------
+# copied from repository
 
 "%||%" <- function(a, b) {
   if (!is.null(a)) a else b
@@ -104,6 +100,11 @@ GeomFlatViolin <-
   )
 
 
+#' Counts all unique session x type x sequence combinations
+#'
+#' @param df 
+#'
+#' @return df containing counts
 df_select_n <- function(df) {
   df <- df %>% 
     select(session, type, sequence_BIDS, relevant) %>% 
@@ -114,6 +115,11 @@ df_select_n <- function(df) {
   return(df)
 }
 
+#' Returns group-wise counts of sequences
+#'
+#' @param df 
+#'
+#' @return df containing counts
 df_select_n_group <- function(df) {
   df <- df %>% 
     select(session, type, sequence_BIDS, group_BIDS, PatientSex, relevant) %>%
@@ -124,6 +130,11 @@ df_select_n_group <- function(df) {
   return(df)
 }
 
+#' Shows and adds info per groupwise and per all, and sex-wise and per all.
+#'
+#' @param df 
+#'
+#' @return df containing the values
 df_select_patient_info <- function(df){
   df2 <- df %>% mutate(group_BIDS = "all") 
   df3 <- df2 %>% mutate(PatientSex = "all")
@@ -140,8 +151,12 @@ df_select_patient_info <- function(df){
   return(df)
 }
 
+#' Shows unique patient info
+#'
+#' @param df 
+#'
+#' @return df containing the values
 df_select_patient_info2 <- function(df){
-
   df <- df %>%
     select(subject, session, group_BIDS, PatientSex, PatientWeight, PatientBirthDate, AcquisitionDateTime) %>%
     mutate(AcquisitionDateTime = as.Date(AcquisitionDateTime),
@@ -150,6 +165,9 @@ df_select_patient_info2 <- function(df){
   return(df)
 }
 
+#' Bar plot function for sequences
+#'
+#' @param df 
 plot_bar <- function(df){
   p <- df %>% 
     # filter(relevant == 1) %>% 
@@ -165,6 +183,11 @@ plot_bar <- function(df){
 }
 
 
+#' Shows MRI settings
+#'
+#' @param df 
+#'
+#' @return df containing MRI settings
 show_settings <- function(df) {
   df <- df %>%
     select(sequence_BIDS, 
@@ -181,5 +204,27 @@ show_settings <- function(df) {
     count() %>%
     ungroup() %>%
     select(sequence_BIDS, n, everything())
+  return(df)
+}
+
+
+#' Calculates completeness of subjects
+#'
+#' @param df 
+#'
+#' @return df containing RatioCompleteSurveys and RatioCompleteSubjects
+calculate_comp_subjects <- function(df) {
+  df <- df %>% 
+    select(subject, session, group_BIDS, sequence_BIDS, relevant) %>% 
+    filter(relevant == 1) %>% 
+    select(-relevant) %>% 
+    group_by_all() %>% 
+    count() %>% 
+    ungroup %>% 
+    spread(session, n) %>% 
+    mutate("RatioCompleteSurveys" = rowSums(select(., contains("ses-")), na.rm = TRUE)/sessions) %>%
+    group_by(subject) %>%
+    mutate("RatioCompleteSubjects" = mean(RatioCompleteSurveys)) %>%
+    ungroup()
   return(df)
 }
