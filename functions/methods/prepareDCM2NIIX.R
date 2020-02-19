@@ -72,6 +72,7 @@ clean_foldernames <- function(df,
 #' @param subject_regex subject-regex 
 #' @examples
 check_subject_nomenclature <- function(subjects_BIDS, subject_regex) {
+  dir.create(variables_environment$directories$needed$user_diagnostics, showWarnings = FALSE, recursive = TRUE)
   if (any(str_detect(subjects_BIDS, paste0("^", subject_regex, "$"), negate = TRUE))) {
     write_csv(diagnostics$dcm2nii_paths, variables_environment$files$diagnostic$dcm2niix_paths)
     cat("\n\n")
@@ -87,7 +88,6 @@ check_subject_nomenclature <- function(subjects_BIDS, subject_regex) {
     stop("Code breaks here: Implausible subjects_BIDS id found - please edit lut_study_info to edit your regex and the patterns to remove. Then start again.")
   } else {print(paste("Filename cleaning done, subjects_BIDS pattern recognized. Diagnostic output: ", variables_environment$files$diagnostic$dcm2niix_paths))
     print.data.frame(diagnostics$dcm2nii_paths)
-    dir.create(variables_environment$directories$needed$user_diagnostics, showWarnings = FALSE, recursive = TRUE)
     write_csv(diagnostics$dcm2nii_paths, variables_environment$files$diagnostic$dcm2niix_paths)
   }
 }

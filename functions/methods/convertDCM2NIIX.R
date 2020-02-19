@@ -47,9 +47,7 @@ dcm2nii_converter <- function(list, output_folder){
       print_passed_time(i, list, start_timer, "dcm2niix (by Chris Rorden) conversion: ")
       system(list[i])
       write_file("done", done_file)
-    } else if (file.exists(done_file) == 1) {
-      print("Skipped: Subject already processed - folder contains done.txt")
-    }
+    } 
   }
   print_passed_time(i, list, start_timer, "Total:  ")
   print("===================================")
