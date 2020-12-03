@@ -51,6 +51,10 @@ copy2BIDS <- function(csv_file){
   cat("\n\n")
   cat("\n\n")
   
+  csv_file_relevant %>%
+    select(subject, session, type, BIDS_json) %>%
+    readr::write_csv(., variables_environment$files$diagnostic$bids_files)
+  
   csv_file_relevant_non_dwi <- csv_file_relevant %>% filter(type != "dwi") 
   csv_file_relevant_dwi <- csv_file_relevant %>% filter(type == "dwi") %>%
     mutate(input_bval = str_replace(input_json, ".json", ".bval"),

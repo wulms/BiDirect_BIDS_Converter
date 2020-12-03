@@ -1,0 +1,105 @@
+---
+title: "BiDirect BIDS Viewer"
+params:
+  wd: "working_dir"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+source("../functions/libraries.R")
+source("../dashboard/dashboard_functions.R")
+
+# source("data.R")
+
+# setwd(dir = args)
+knitr::opts_knit$set(root.dir = params$wd)
+# BIANCA_with_manual <- readr::read_csv("BIANCA_with_manual.csv")
+```
+
+
+Data Overview
+===================================
+
+###
+
+```{r}
+image_df <- read_csv("user/diagnostics/step4_bids_files.csv") %>%
+  mutate(BIDS_nii = str_replace(BIDS_json, ".json", ".nii.gz"),
+         sequence = str_extract(BIDS_nii, "(?<=ses-s[:digit:]{1}_)[:graph:]*$") %>% str_remove(".nii.gz")) %>%
+  select(-BIDS_json)
+
+image_df %>% datatable_setting()
+```
+
+
+
+
+
+# Viewer
+
+
+```{r eval=TRUE}
+shinyApp(
+  ui = fillPage(
+    fillRow(flex = c(1, 7),
+      inputPanel(
+        selectInput("subject", "Subject:", unique(image_df$subject), multiple = FALSE, selected = image_df$subject[1]),
+        selectInput("session", "Session:", unique(image_df$session), multiple = FALSE, selected = image_df$session[1]),
+        selectInput("sequence", "Sequence:", unique(image_df$sequence), multiple = FALSE, selected = image_df$sequence[1]),
+     #   sliderInput("threshold", "Threshold:", min = 0, max = 1, value = 0.8, step = 0.1),
+    #    checkboxInput("only_manual", "Only Manual masks?", value = FALSE, width = NULL),
+    #    h4("Green = manual mask"),
+    #    h4("Red = algorithm mask"),
+    #    h6("   "),
+        h6("Please click the globe button in the right top corner of the viewer to view image in original space alignment!")
+      ),
+      papayaOutput("papayaViewer", width = "80%")
+      #textOutput("text"),
+      #dataTableOutput("df_table")
+
+    )
+  ),
+  server = function(input, output) {
+
+    filtered_df <- reactive({
+      df <- image_df %>%
+        filter(subject %in% input$subject) %>%
+        filter(session %in% input$session) %>%
+        filter(sequence %in% input$sequence)
+    })
+
+    output$text <- renderText({
+      img1 <- filtered_df()$BIDS_nii[1]
+    })
+
+    output$df_table <- renderDataTable({
+      filtered_df()
+    })
+
+    output$papayaViewer <- renderPapaya({
+      img1 <- filtered_df()$BIDS_nii[1]
+
+
+    papayaWidget::papaya(img = c(img1),
+                       orthogonal = TRUE,
+                     #  width = 500,
+                     #  height = 600,
+                       hide_controls = FALSE,
+                       hide_toolbar = FALSE,
+                       options = list(papayaOptions(alpha = 1)
+                                      )
+                     )
+  })
+  },
+  options = list(height = 600)
+)
+```
+
+
+
+
+

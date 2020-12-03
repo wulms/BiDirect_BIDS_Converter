@@ -72,13 +72,17 @@ variables_environment$files = list(
   # Diagnostic debugging output
   "dcm2niix_paths" = paste0(variables_environment$directories$needed$user_diagnostics, "/step1_dcm2nii_paths.csv"),
   "nii2BIDS_paths" = paste0(variables_environment$directories$needed$user_diagnostics, "/step2_nii_2_BIDS_paths.csv"),
-  "metadata" = paste0(variables_environment$directories$setup$working_dir, "/user/diagnostics/step3_json_extracted_metadata.tsv")
+  "metadata" = paste0(variables_environment$directories$setup$working_dir, "/user/diagnostics/step3_json_extracted_metadata.tsv"),
+  "bids_files" = paste0(variables_environment$directories$setup$working_dir, "/user/diagnostics/step4_bids_files.csv")
   ),
   # Dashboards for internal and external use
   dashboards = list(
   "internal_rmd" = paste0(getwd(), "/dashboard/BIDS_dashboard_internal.Rmd"),
   "internal_use" = paste0(variables_environment$directories$optional$dashboards, "/dashboard_internal_use.html"),
   "external_use" = paste0(variables_environment$directories$optional$dashboards, "/dashboard_external_use.html")
+  ),
+  shiny = list(
+    "app" = paste0(getwd(), "/shiny/bidirect_bids_viewer.Rmd")
   )
 )
 

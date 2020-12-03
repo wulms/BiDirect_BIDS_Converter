@@ -28,7 +28,7 @@ mutate_sequence <- function(df){
   df <- df %>%
     mutate(BIDS_sequence_ID = "bids_sequence",
            type = "anat/dwi/func",
-           relevant = "0/1")
+           relevant = "0")
   return(df)
 }
 

@@ -63,6 +63,9 @@ Raw infos {data-width=200}
 `r params$df %>% count(InstitutionName)  %>% kable()`  
  
 
+
+
+
 Study Summary {data-width=450}
 -----------------------------------------------------------------------
 
@@ -159,7 +162,7 @@ calculate_comp_subjects <- function(df) {
     select(subject, session, group_BIDS, sequence_BIDS, relevant) %>% 
     filter(relevant == 1) %>% 
     select(-relevant) %>% 
-    group_by_all() %>% 
+    group_by(across(everything())) %>% 
     count() %>% 
     ungroup %>% 
     spread(session, n) %>% 
@@ -238,7 +241,7 @@ params$df %>%
             var = var(Age),
             iqr = IQR(Age),
             n = n()) %>%
-  mutate_if(is.numeric, round, digits = 2) %>%
+  mutate(across(where(is.numeric), round, digits = 2)) %>%
   select(session, n, everything()) %>%
   datatable_setting()
 ```
@@ -256,7 +259,7 @@ params$df %>%
             iqr = IQR(Age),
             n = n()) %>%
   select(session, PatientSex, n, everything()) %>%
-  mutate_if(is.numeric, round, digits = 2) %>%
+  mutate(across(where(is.numeric), round, digits = 2)) %>%
   datatable_setting()
 ```
 
@@ -308,7 +311,7 @@ params$df %>%
             var = var(PatientWeight),
             iqr = IQR(PatientWeight),
             n = n()) %>%
-  mutate_if(is.numeric, round, digits = 2) %>%
+  mutate(across(where(is.numeric), round, digits = 2)) %>%
   select(session, n, everything()) %>%
   datatable_setting()
 ```
@@ -325,7 +328,7 @@ params$df %>%
             var = var(PatientWeight),
             iqr = IQR(PatientWeight),
             n = n()) %>%
-  mutate_if(is.numeric, round, digits = 2) %>%
+  mutate(across(where(is.numeric), round, digits = 2)) %>%
   select(session, PatientSex, n, everything()) %>%
   datatable_setting()
 ```
@@ -419,7 +422,7 @@ QC: Sequence selection
 ```{r}
 params$df %>%
   select(type, relevant, sequence, SeriesDescription, ProtocolName) %>%
-  group_by_all() %>%
+  group_by(across(everything())) %>% 
   count() %>%
   select(type, relevant, n, everything()) %>%
   datatable_setting()
@@ -433,7 +436,7 @@ QC: Duplicates
 ```{r}
 params$df %>%
   select(subject, session, sequence) %>% 
-  group_by_all () %>% 
+  group_by(across(everything())) %>% 
   count() %>% 
   filter(n > 1) %>%
   left_join(params$df) %>% 
@@ -479,4 +482,15 @@ params$df %>%
   show_settings() %>%
   datatable_setting()
   
+```
+
+
+
+Debug
+========================
+
+### 
+
+```{r}
+lifecycle::last_warnings()
 ```

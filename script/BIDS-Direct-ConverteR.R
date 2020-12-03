@@ -86,6 +86,14 @@ rmarkdown::render(variables_environment$files$dashboards$internal_rmd,
 
  # setwd(variables_environment$directories$setup$repo_dir)
 
+print(variables_environment$directories$setup$working_dir)
+
+rmarkdown::run(variables_environment$files$shiny$app, 
+               auto_reload = FALSE,
+               shiny_args = list(launch.browser = TRUE),
+               # render_args = list(params = list(wd = variables_environment$directories$setup$working_dir))
+               render_args = list(params = list(wd = "/home/niklas/ownCloud/BD_Test/bidirect_converter_test/"))
+)
   
 
                                         

@@ -20,7 +20,7 @@ datatable_setting <- function(df) {
 df_select_n <- function(df) {
   df <- df %>% 
     select(session, type, sequence_BIDS, relevant) %>% 
-    group_by_all() %>% 
+    group_by(across(everything())) %>% 
     count() %>% 
     ungroup()  
    # spread(. ,session, value = n)
@@ -31,7 +31,7 @@ df_select_n_group <- function(df) {
   df <- df %>% 
     select(session, type, sequence_BIDS, group_BIDS, PatientSex, relevant) %>%
     filter(relevant == 1) %>%
-    group_by_all() %>% 
+    group_by(across(everything())) %>% 
     count() %>% 
     ungroup() 
   return(df)
@@ -104,8 +104,8 @@ show_settings <- function(df) {
       -PatientWeight,
 #      -PhilipsRescaleSlope
     ) %>%
-    mutate_if(is.numeric, round, digits = 2) %>%
-    group_by_all() %>%
+    mutate(across(where(is.numeric), round, digits = 2)) %>%
+    group_by(across(everything())) %>%
     count() %>%
     ungroup() %>%
     select(sequence_BIDS, type, n, group_BIDS, relevant, everything())
