@@ -175,9 +175,12 @@ To remove multiple pattern simply join them using `pattern1|pattern2|pattern3`.
 
 ## Step 2: dcm2nii conversion using dcm2niix by Chris Rorden
 
+- json_sensitive - contains json files with the sensitive subject information (PatientId, Birthdate, Sex, Weight, AcquisitionDate)
+- nii - contains json and nii files, where the sensitive information is removed
+
 ```bash
 nii_temp
-├── json_sensitive - only json files containing sensitive information (PatientId, Birthdate, Sex, Weight, AcquisitionDate)
+├── json_sensitive 
 │   ├── ses-0
 │   │   ├── sub-10002
 │   │   │   ├── 3DT1TFElrs.json
@@ -203,7 +206,7 @@ nii_temp
 │       │   └── ...
 │       └── sub-10008
 │           └── ...
-└── nii - json + nii files, removed sensitive information from header
+└── nii
     ├── ses-0
     │   ├── sub-10002
     │   │   ├── 3DT1TFElrs.json
