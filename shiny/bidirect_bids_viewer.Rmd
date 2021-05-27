@@ -6,6 +6,8 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    runtime: shiny
+    source_code: embed
 runtime: shiny
 ---
 
@@ -21,15 +23,18 @@ knitr::opts_knit$set(root.dir = params$wd)
 ```
 
 
-Data Overview
-===================================
+# Data Overview
 
-###
+
+## Test 2
+
+### Test 3
+
 
 ```{r}
 image_df <- read_csv("user/diagnostics/step4_bids_files.csv") %>%
   mutate(BIDS_nii = str_replace(BIDS_json, ".json", ".nii.gz"),
-         sequence = str_extract(BIDS_nii, "(?<=ses-s[:digit:]{1}_)[:graph:]*$") %>% str_remove(".nii.gz")) %>%
+         sequence = str_extract(BIDS_nii, paste0("(?<=", session, "_)[:graph:]*$")) %>% str_remove(".nii.gz")) %>%
   select(-BIDS_json)
 
 image_df %>% datatable_setting()
@@ -41,11 +46,16 @@ image_df %>% datatable_setting()
 
 # Viewer
 
+## Test 2
+
+### Test 3
+
+
 
 ```{r eval=TRUE}
 shinyApp(
   ui = fillPage(
-    fillRow(flex = c(1, 7),
+    fillRow(flex = c(1, 7), height = "200%",
       inputPanel(
         selectInput("subject", "Subject:", unique(image_df$subject), multiple = FALSE, selected = image_df$subject[1]),
         selectInput("session", "Session:", unique(image_df$session), multiple = FALSE, selected = image_df$session[1]),
@@ -55,13 +65,15 @@ shinyApp(
     #    h4("Green = manual mask"),
     #    h4("Red = algorithm mask"),
     #    h6("   "),
-        h6("Please click the globe button in the right top corner of the viewer to view image in original space alignment!")
+        h6("Please click the globe button in the right top corner of the viewer to view image in original space alignment!"),
+        h6("Debug: Cannot open the connection - This means, that a file is missing! Check in the data overview your selection of parameters")
       ),
-      papayaOutput("papayaViewer", width = "80%")
+   # fillCol(
+      papayaOutput("papayaViewer", width = "100%")
       #textOutput("text"),
       #dataTableOutput("df_table")
-
-    )
+      )
+    #)
   ),
   server = function(input, output) {
 
@@ -94,12 +106,12 @@ shinyApp(
                                       )
                      )
   })
-  },
-  options = list(height = 600)
+  }#,
+  #options = list(height = 2000)
 )
 ```
 
 
 
 
-
+### Test 4

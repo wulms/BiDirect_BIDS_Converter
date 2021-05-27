@@ -2,7 +2,7 @@
 
 In 3 user-interactions (csv editings) from a folder containing your participants dicoms to a BIDS specification dataset, that passes the BIDS-Validator.
 
-This tool is a project of my PhD. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, Wilhelms-University, Münster, Germany). 
+This tool is a project of my PhD. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, WWU, Münster, Germany). 
 Tested on Windows and Ubuntu 18.04.
 Conversion tested with Siemens and Philips data.
 
