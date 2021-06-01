@@ -2,7 +2,7 @@
 
 In 3 user-interactions (csv editings) from a folder containing your participants dicoms to a BIDS specification dataset, that passes the BIDS-Validator.
 
-This tool is a project of my PhD. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, Wilhelms-University, Münster, Germany). 
+This tool is a project of my PhD. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, WWU, Münster, Germany). 
 Tested on Windows and Ubuntu 18.04.
 Conversion tested with Siemens and Philips data.
 
@@ -72,6 +72,9 @@ study_data
 
 `cd /home/niklas/BiDirect_BIDS_Converter`  
 `Rscript --vanilla start_BIDS_ConverteR.R /home/niklas/study_data`  
+
+
+![Animation 1: Start of script](images/0_start.gif)
 
 
 ### Windows  
@@ -149,6 +152,11 @@ my_study_folder
             └── DICOMDIR
 ```
 
+![Animation 1: Start of script](images/0_start.gif)
+
+![Animation 2: First run](images/1-first_run.gif)
+
+
 ## Step 1: edit information in user diagnostics on session naming and study info
 
 Study info needs a regex for subject- and group-id as well as a regex for redundant appendices in filenames.
@@ -173,14 +181,25 @@ __pattern_to_remove__: "10001_is_subject_" <- now in your csv file is informatio
 
 To remove multiple pattern simply join them using `pattern1|pattern2|pattern3`.
 
-## Step 2: dcm2nii conversion using dcm2niix by Chris Rorden
+![Animation 3: Edit study info and second run](images/2-edit_study_info.gif)
 
-- json_sensitive - contains json files with the sensitive subject information (PatientId, Birthdate, Sex, Weight, AcquisitionDate)
-- nii - contains json and nii files, where the sensitive information is removed
+
+## Step 2: Edit session_info.csv 
+
+Rename your session-id's to BIDS id's. 
+
+E.g. "Baseline" in your study to "s0" or "0". And "Follow-Up" to "s1" or "1".
+
+![Animation 4: Second run - checks if study_info is entered and identifies session-id's](images/3-second_run.gif)
+
+![Animation 5: Edit "lut_sessions.csv" to match session id's to BIDS](images/4_edit_session.gif)
+
+
+## Step 2: dcm2nii conversion using dcm2niix by Chris Rorden
 
 ```bash
 nii_temp
-├── json_sensitive 
+├── json_sensitive - only json files containing sensitive information (PatientId, Birthdate, Sex, Weight, AcquisitionDate)
 │   ├── ses-0
 │   │   ├── sub-10002
 │   │   │   ├── 3DT1TFElrs.json
@@ -206,7 +225,7 @@ nii_temp
 │       │   └── ...
 │       └── sub-10008
 │           └── ...
-└── nii
+└── nii - json + nii files, removed sensitive information from header
     ├── ses-0
     │   ├── sub-10002
     │   │   ├── 3DT1TFElrs.json
@@ -235,6 +254,10 @@ nii_temp
 
 ```
 
+![Animation 6: dcm2niix conversion](images/5_dcm2niix.gif)
+
+
+
 ## Step 3: indexes all json files and merges the information, extracts the unique sequence patterns amd sensivite information.
 
 ```bash
@@ -245,6 +268,10 @@ nii_temp
         └── lut_sequences.csv
 ```
 
+![Animation 7: Json indexing](images/6_json_extraction.gif)
+
+
+
 ## Step 4: Edit the lut_sequences.csv. Map the sequences to BIDS names, BIDS type and choose relevance.
 
 ```bash
@@ -253,6 +280,14 @@ nii_temp
         └── step2_nii_2_BIDS_paths.csv
 ```
 
+
+![Animation 8: Edit lut_sequences.csv to match your session-id's to BIDS](images/7_edit_sequences.gif)
+
+![Animation 9: BIDS-edited sequences](images/8_edited_sequences.gif)
+
+![Animation 10: Final run - copies files to BIDS folder, renders Dashboard and starts BiDirect-BIDS-Viewer for file inspection](images/9_final_run.gif)
+
+![Bidirect Bids Viewer - a shiny app with papayaViewer for visual quality control](images/Bidirect_BIDS_Viewer.png)
 
 
 ```bash
