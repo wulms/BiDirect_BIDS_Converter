@@ -1,12 +1,14 @@
 # BiDirect_BIDS_Converter
 
-In 3 user-interactions (csv editings) from a folder containing your participants dicoms to a BIDS specification dataset, that passes the BIDS-Validator.
-
-This tool is a project of my PhD. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, WWU, Münster, Germany). 
-Tested on Windows and Ubuntu 18.04.
-Conversion tested with Siemens and Philips data.
-
 [![DOI](https://zenodo.org/badge/195199025.svg)](https://zenodo.org/badge/latestdoi/195199025)
+
+
+
+
+This tool is a project of my PhD. It converts MRI data from DICOM to BIDS in three user-interactions (csv editings). A folder containing your participants DICOMS is your input. A BIDS specification dataset, that passes the BIDS-Validator your output. I developed this tool on all the neuroimaging data of the BiDirect study (Institute of Epidemiology and Social Medicine, WWU, Münster, Germany). 
+
+
+
 
 # Short tutorial: 
 This tool is a user-friendly tool to convert your dicom study data to BIDS.  
@@ -72,16 +74,6 @@ You only need to customize these to your study/authors/grant/license.
 
 
 
-
-
-
-
-
-
-
-
-
-
 The next update is coming! We implemented a Dashboard, which shows information about the whole study, acquired data, detail information on sequences, header information and plausility checks (id, gender, scanner sequence settings, duplicate sequences.
 
 This tool will be developed to become a package for R.
@@ -92,28 +84,6 @@ This tool will be developed to become a package for R.
 - anonymization using pydeface or fsl_deface for sharing anonymized (header + image) files. 
 - consistent debugging information
 
-
-## This script sorts the DICOM data of the BiDirect study into BIDS file format using following libraries:
-
-Docker (which implements dcm2niix, debian, and the needed R libraries)
-
-Dicom-to-NifTi conversion
-- wrapper for Chris Rordens DCM2NII
-  - working on Philips DICOMS
-- using system() command
-
-file renaming  
-- stringr (for the renaming stuff and regular expressions)  
-
-file management
-- Tidyverse (dplyr, tidyr, stringr)
-
-json indexing
-- rjson
-
-viewer
-- papaya
-- papayaViewer
 
 ## The algorithm works as described below:
 
