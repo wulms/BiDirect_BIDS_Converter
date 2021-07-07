@@ -11,6 +11,13 @@ This tool is a project of my PhD. It converts MRI data from DICOM to BIDS in thr
 
 
 # Short tutorial: 
+
+----
+
+## TIP - If you need a detailed Step-by-Step tutorial how to work with the client, we recommend you to check this [Wiki-Tutorial-Page](https://github.com/wulms/BiDirect_BIDS_Converter/wiki/Tutorial)
+
+----
+
 This tool is a user-friendly tool to convert your dicom study data to BIDS.  
 
 - It is required, that you have a structured naming convention on your folders, that contain the dicoms.  
