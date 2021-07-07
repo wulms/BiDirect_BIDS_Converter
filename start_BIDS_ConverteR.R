@@ -24,10 +24,10 @@ dicomdirs = dir(path = args, pattern = "DICOM$|DICOMDIR$", recursive = TRUE)
 if(length(dicomdirs) == 0){
   stop("No folder 'DICOM' or 'DICOMDIR' found in your subject folders.")
 }
-
-
 # print the number of all dicom folders
 print(paste("You have added ", length(dicomdirs), "DICOM directories to the converter."))
+
+
 # start the converter
 source(paste0(getwd(), "/script/BIDS-Direct-ConverteR.R"))
 
