@@ -58,7 +58,8 @@ variables_environment$files = list(
   bids = list(
     "bids_changes_txt" = paste0(variables_environment$directories$needed$bids,"/CHANGES"),
     "bids_dataset_json" = paste0(variables_environment$directories$needed$bids, "/dataset_description.json"),
-    "bids_readme_txt" = paste0(variables_environment$directories$needed$bids, "/README")),
+    "bids_readme_txt" = paste0(variables_environment$directories$needed$bids, "/README")
+    ),
   # LUT files for toolbox
   lut = list(
     # "example_lut_study_info" = paste0(variables_environment$directories$needed$user_settings, "/example_lut_study_info.csv"),
@@ -68,8 +69,8 @@ variables_environment$files = list(
     "lut_study_info" = paste0(variables_environment$directories$needed$user_settings, "/lut_study_info.csv")
   ),
   # Extracted json metadata
-  diagnostic = list(
   # Diagnostic debugging output
+  diagnostic = list(
   "dcm2niix_paths" = paste0(variables_environment$directories$needed$user_diagnostics, "/step1_dcm2nii_paths.csv"),
   "nii2BIDS_paths" = paste0(variables_environment$directories$needed$user_diagnostics, "/step2_nii_2_BIDS_paths.csv"),
   "metadata" = paste0(variables_environment$directories$setup$working_dir, "/user/diagnostics/step3_json_extracted_metadata.tsv"),

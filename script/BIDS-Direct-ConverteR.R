@@ -1,8 +1,14 @@
 # BIDS-Direct-ConverteR
-#setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/")
 
 
+
+# test paths
+
+# setwd("/home/niklas/Coding/GITHUB-BiDirect_BIDS_Converter/") # uncomment
 # args = "/home/niklas/BIDS_test/"
+
+#setwd("E:/Cloud/Sciebo_Wulms/Coding_PC/Workstation_Zuhause/BiDirect_BIDS_Converter")
+# args = "E:/Cloud/Onedrive/Dokumente/test" # uncomment
 
 ## general setup
 source("functions/functions.R")
@@ -74,6 +80,8 @@ render_asci_art("asci/success.txt")
 #cat(getwd())
 
 # create Dashboard
+
+
 # setwd(variables_environment$directories$setup$repo_dir)
 path_to_folder(variables_environment$files$dashboards$internal_use)
 rmarkdown::render(variables_environment$files$dashboards$internal_rmd, 
@@ -81,7 +89,7 @@ rmarkdown::render(variables_environment$files$dashboards$internal_rmd,
                   output_dir = paste0(variables_environment$directories$setup$working_dir , "bids/"),
                   params=list(study=variables_user$LUT$study_info$study_name,
                               df=diagnostics$json_data,
-                              wd=paste0(variables_environment$directories$setup$working_dir , "bids/"),
+                              wd=paste0(variables_environment$directories$setup$working_dir , "/bids/"),
                               pattern_to_remove=variables_user$LUT$study_info$remove_pattern_regex))
 
  # setwd(variables_environment$directories$setup$repo_dir)
