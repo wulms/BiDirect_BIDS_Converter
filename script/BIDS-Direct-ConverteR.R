@@ -86,7 +86,7 @@ render_asci_art("asci/success.txt")
 path_to_folder(variables_environment$files$dashboards$internal_use)
 rmarkdown::render(variables_environment$files$dashboards$internal_rmd, 
                   # output_file = variables_environment$files$dashboards$internal_use,
-                  output_dir = paste0(variables_environment$directories$setup$working_dir , "bids/"),
+                  output_dir = paste0(variables_environment$directories$setup$working_dir , "/bids/"),
                   params=list(study=variables_user$LUT$study_info$study_name,
                               df=diagnostics$json_data,
                               wd=paste0(variables_environment$directories$setup$working_dir , "/bids/"),
