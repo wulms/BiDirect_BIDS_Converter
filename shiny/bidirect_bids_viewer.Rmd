@@ -46,72 +46,120 @@ image_df %>% datatable_setting()
 
 # Viewer
 
-## Test 2
-
-### Test 3
-
+Column {.sidebar data-width=250}
+-------------------------------
 
 
-```{r eval=TRUE}
-shinyApp(
-  ui = fillPage(
-    fillRow(flex = c(1, 7), height = "200%",
-      inputPanel(
-        selectInput("subject", "Subject:", unique(image_df$subject), multiple = FALSE, selected = image_df$subject[1]),
-        selectInput("session", "Session:", unique(image_df$session), multiple = FALSE, selected = image_df$session[1]),
-        selectInput("sequence", "Sequence:", unique(image_df$sequence), multiple = FALSE, selected = image_df$sequence[1]),
-     #   sliderInput("threshold", "Threshold:", min = 0, max = 1, value = 0.8, step = 0.1),
-    #    checkboxInput("only_manual", "Only Manual masks?", value = FALSE, width = NULL),
-    #    h4("Green = manual mask"),
-    #    h4("Red = algorithm mask"),
-    #    h6("   "),
-        h6("Please click the globe button in the right top corner of the viewer to view image in original space alignment!"),
-        h6("Debug: Cannot open the connection - This means, that a file is missing! Check in the data overview your selection of parameters")
-      ),
-   # fillCol(
-      papayaOutput("papayaViewer", width = "100%")
-      #textOutput("text"),
-      #dataTableOutput("df_table")
-      )
-    #)
-  ),
-  server = function(input, output) {
+```{r}
+selectInput("subject", "Subject:", unique(image_df$subject) %>% sort(), multiple = FALSE, selected = image_df$subject[1])
 
-    filtered_df <- reactive({
+selectInput("session", "Session:", unique(image_df$session) %>% sort(), multiple = FALSE, selected = image_df$session[1])
+
+selectInput("sequence", "Sequence:", unique(image_df$sequence) %>% sort(), multiple = FALSE, selected = image_df$sequence[1])
+
+
+
+```
+
+#### Help
+
+Please click the globe button in the right top corner of the viewer to view image in original space alignment!  
+
+Debug: Cannot open the connection - This means, that a file is missing! Check in the data overview your selection of parameters  
+
+
+#### Big thanks on the contributors of the following packages:  
+
+The viewer is the papaya viewer: [Link](https://rii-mango.github.io/Papaya/)  
+
+Brought to R by John Muschelli: [Link](https://cran.r-project.org/web/packages/papayar/index.html)  
+
+Brought to Shiny by John Muschelli: [Link](https://johnmuschelli.com/papayaWidget/index.html)  
+
+
+
+
+
+```{r}
+filtered_df <- reactive({
       df <- image_df %>%
         filter(subject %in% input$subject) %>%
         filter(session %in% input$session) %>%
         filter(sequence %in% input$sequence)
     })
 
-    output$text <- renderText({
-      img1 <- filtered_df()$BIDS_nii[1]
-    })
-
-    output$df_table <- renderDataTable({
-      filtered_df()
-    })
-
-    output$papayaViewer <- renderPapaya({
-      img1 <- filtered_df()$BIDS_nii[1]
-
-
-    papayaWidget::papaya(img = c(img1),
-                       orthogonal = TRUE,
-                     #  width = 500,
-                     #  height = 600,
-                       hide_controls = FALSE,
-                       hide_toolbar = FALSE,
-                       options = list(papayaOptions(alpha = 1)
-                                      )
-                     )
-  })
-  }#,
-  #options = list(height = 2000)
-)
+filtered_subject <- reactive({
+  df <- image_df %>%
+    filter(subject %in% input$subject) %>%
+    select(-subject, -BIDS_nii) %>%
+    mutate(existing = 1) %>%
+    pivot_wider(names_from = session,
+                values_from = existing,
+                names_sep = ", ") %>%
+    arrange(type, sequence)
+})
 ```
 
 
+```{r}
+output$text <- renderText({
+      img1 <- filtered_df()$BIDS_nii[1]
+    })
+
+# output$df_table <- renderDataTable({
+#   filtered_subject() 
+# })
+
+output$df_table2 <- renderDataTable(filtered_subject(),
+                                    #filter = 'none',
+                                    #rownames = FALSE,
+                                    options = list(dom = 't'),
+                                    #ordering = F
+                                    )
+
+output$papayaViewer <- renderPapaya({
+  img1 <- filtered_df()$BIDS_nii[1]
 
 
-### Test 4
+papayaWidget::papaya(img = c(img1),
+                   orthogonal = TRUE,
+                   # width = 500,
+                   # height = 1000,
+                   hide_controls = FALSE,
+                   hide_toolbar = FALSE,
+                   options = list(papayaOptions(alpha = 1)
+                                  )
+                 )
+})
+    
+
+```
+
+
+Column
+-------------------------
+
+## Table
+
+```{r}
+# dataTableOutput("df_table")
+
+dataTableOutput("df_table2")
+
+```
+
+
+Column
+-------------------------------
+
+## Test
+
+```{r}
+papayaOutput("papayaViewer",  
+             height = "1000px", 
+             width = "1200px"
+             )
+
+# textOutput("")#,
+```
+
