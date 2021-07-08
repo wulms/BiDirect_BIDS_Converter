@@ -7,3 +7,5 @@
 dcm2niix
 dcm2niibatch
 *.exe
+/BiDirect_BIDS_Converter.iml
+/.idea/
